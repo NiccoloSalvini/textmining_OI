@@ -5,9 +5,9 @@
 
 # Text Mining Officine Italia per i **Giovani**
 
+*author*: **[Nicolò Foppiani](https://github.com/nfoppiani)** <br>
 *author*: **[Niccolò Salvini](https://niccolosalvini.netlify.app/)**
-<br> *author*: **[Nicolò Foppiani](https://github.com/nfoppiani)** <br>
-*last build date*: 04 febbraio, 2021
+<br> *last build date*: 04 febbraio, 2021
 
 <br> <br>
 
@@ -66,4 +66,4 @@ l’Europa del futuro
 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative
 Commons Attribuzione 4.0 Internazionale</a>.
 
-## References
+<!-- ## References -->

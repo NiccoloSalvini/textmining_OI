@@ -1,9 +1,7 @@
 ---
-output:
+output: 
   github_document:
-    toc: FALSE
-    toc_depth: 2
-bibliography: [references.bib, packages.bib]
+    toc: false
 ---
 
 <!-- README.md è generato da README.Rmd. Per favore modifica quello e compila il documento  -->
@@ -23,6 +21,7 @@ knitr::opts_chunk$set(
 )
 
 
+library(knitr)
 
 ## automatically create a bib database for R packages
 knitr::write_bib(c(
@@ -48,8 +47,8 @@ knitr::knit_hooks$set(imgcenter = function(before, options, envir){  # to center
  
 # Text Mining Officine Italia per i **Giovani**
 
-_author_: **[Niccolò Salvini](https://niccolosalvini.netlify.app/)** <br> 
 _author_: **[Nicolò Foppiani](https://github.com/nfoppiani)** <br> 
+_author_: **[Niccolò Salvini](https://niccolosalvini.netlify.app/)** <br> 
 _last build date_: `r format(Sys.Date(), "%d %B, %Y")`
 
 
@@ -82,6 +81,7 @@ Le risorse che investiamo oggi non possono mancare di un progetto **strategico**
 
 ## Grafiche:
 
+
 ## Next Features:
 
 
@@ -89,5 +89,5 @@ Le risorse che investiamo oggi non possono mancare di un progetto **strategico**
 
 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Licenza Creative Commons" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a><br />Quest'opera è distribuita con Licenza <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribuzione 4.0 Internazionale</a>.
 
+<!-- ## References -->
 
-## References
