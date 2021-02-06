@@ -158,6 +158,20 @@ theme_oi2 = function(family = "Rubick") {
 ```
 
 
+## A couple of refs 
+
+
+```{r couple_rfs}
+
+knitr::include_url(url = "https://www.business-science.io/business/2020/09/24/using-drake-etl.html?utm_content=buffer092bf&utm_medium=social&utm_source=linkedin.com&utm_campaign=buffer")
+
+knitr::include_url(url = "https://cbail.github.io/textasdata/word2vec/rmarkdown/word2vec.html")
+
+
+
+
+
+``` 
 
 ## A few first tidy text mining examples
 
