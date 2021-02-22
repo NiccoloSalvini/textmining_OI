@@ -86,12 +86,12 @@ Clona la repo in locale col comando
 
 Apri il file di progetto nella cartella clonata `textmining_OI.Rproj`, successivamente compila il documento `main.R` col comando **knit**  
 
+## To-Do list:
 
-## Grafiche:
-
-
-## Next Features:
-
+- [ ] Serve a site ([blogdown](https://bookdown.org/yihui/blogdown/))
+- [x] Creating _trigrams_ Giovani - non Giovani
+- [x] build **wordclouds**
+- [ ] obtain all PNRs
 
 ## Licenza:
 

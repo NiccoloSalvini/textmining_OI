@@ -7,14 +7,12 @@
 
 *author*: **[Nicolò Foppiani](https://github.com/nfoppiani)** <br>
 *author*: **[Niccolò Salvini](https://niccolosalvini.netlify.app/)**
-<br> *last build date*: 05 febbraio, 2021
+<br> *last build date*: 22 febbraio, 2021
 
 <br> <br>
 
 <p align="center">
-
 <img src="img/whatchdog.png" width="1000" />
-
 </p>
 
 ## Descrizione:
@@ -55,9 +53,21 @@ livello nazionale ma **europeo**. Lo vogliamo fare chiedendo ascolto e
 confronto, per contribuire a interrogarci su come disegnare l’Italia e
 l’Europa del futuro
 
-## Grafiche:
+## Uso:
 
-## Next Features:
+Clona la repo in locale col comando
+
+`$ git clone https://github.com/NiccoloSalvini/textmining_OI.git`
+
+Apri il file di progetto nella cartella clonata `textmining_OI.Rproj`,
+successivamente compila il documento `main.R` col comando **knit**
+
+## To-Do list
+
+-   [ ] Serve a site ([blogdown](https://bookdown.org/yihui/blogdown/))
+-   [x] Creating *trigrams* Giovani - non Giovani
+-   [x] build **wordclouds**
+-   [ ] obtain all PNRs
 
 ## Licenza:
 
@@ -67,19 +77,11 @@ l’Europa del futuro
 Commons Attribuzione 4.0 Internazionale</a>.
 
 <!-- ## Code of Conduct -->
-
 <!-- Contributor Code of Conduct -->
-
 <!-- As contributors and maintainers of this project, we pledge to respect all people who contribute through reporting issues, posting feature requests, updating documentation, submitting pull requests or patches, and other activities. -->
-
 <!-- We are committed to making participation in this project a harassment-free experience for everyone, regardless of level of experience, gender, gender identity and expression, sexual orientation, disability, personal appearance, body size, race, ethnicity, age, or religion. -->
-
 <!-- Examples of unacceptable behavior by participants include the use of sexual language or imagery, derogatory comments or personal attacks, trolling, public or private harassment, insults, or other unprofessional conduct. -->
-
 <!-- Project maintainers have the right and responsibility to remove, edit, or reject comments, commits, code, wiki edits, issues, and other contributions that are not aligned to this Code of Conduct. Project maintainers who do not follow the Code of Conduct may be removed from the project team. -->
-
 <!-- Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by opening an issue or contacting one or more of the project maintainers. -->
-
 <!-- This Code of Conduct is adapted from the Contributor Covenant (http:contributor-covenant.org), version 1.0.0, available at http://contributor-covenant.org/version/1/0/0/ -->
-
 <!-- ## References -->
