@@ -340,16 +340,22 @@ clen_pnrs %>%
 
 
 
-```{r trigramprep}
+```{r gerTrigramstart}
 # param set
 n_word <- 20
 n_top <- 150
 n_gramming <- 3
  
-## Trigrams 
-trigrams <- tibble(text = janeaustenr::emma) %>%
+## Trigrams fro German PNR 
+trigrams <- tibble(text = germania) %>%
+  select(text) 
   unnest_tokens(trigram, text, token = "ngrams", n = n_gramming)
-start_words <- c("he", "she")
+
+start_words <- c("young", "years-old")
+
+```
+
+```{r gerTrigrammean}
 ## top 150 trigrams using count and some regex magi
 pattern <- str_c("^", start_words, " ", collapse = "|")
 top_words <- trigrams %>%

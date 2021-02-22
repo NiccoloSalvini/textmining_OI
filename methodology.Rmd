@@ -1,0 +1,21 @@
+## Metodologia
+
+-   **trigram:** per la rappresentazione che ci piace vanno almneo scelte all'inizio le prima 2/3 parole, nel caso delle slides "he"or "she". Io ho scelto "young-people" (anche solo "young" va bene) perchè è 'l'epresione con cui viene fatto riferimenbto al fenomeno che vogliamo studiare. Ho provcato altri sinonimi come:
+
+    -   adolescent.
+
+    -   junior.
+
+    -   juvenile.
+
+    -   minor.
+
+    -   pubescent.
+
+    -   teenybopper.
+
+    -   **young person**.
+
+    -   youngster.
+
+Tuttavia nessuno di essi è presente, quindi ho proceduto con una lettura del PNR per fare una doppia verifica.
