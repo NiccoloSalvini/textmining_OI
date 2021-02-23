@@ -88,10 +88,11 @@ Apri il file di progetto nella cartella clonata `textmining_OI.Rproj`, successiv
 
 ## To-Do list:
 
-- [ ] Serve a site ([blogdown](https://bookdown.org/yihui/blogdown/))
-- [x] Creating _trigrams_ Giovani - non Giovani
+- [ ] serve a site ([blogdown](https://bookdown.org/yihui/blogdown/))
+- [x] creating _trigrams_ Giovani - non Giovani
 - [x] build **wordclouds**
-- [ ] obtain all PNRs
+- [ ] obtain all **PNRs**
+- [ ] build minimal shiny app to explore trigram
 
 ## Licenza:
 

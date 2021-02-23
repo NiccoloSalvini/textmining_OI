@@ -1,21 +1,35 @@
 ## Metodologia
 
--   **trigram:** per la rappresentazione che ci piace vanno almneo scelte all'inizio le prima 2/3 parole, nel caso delle slides "he"or "she". Io ho scelto "young-people" (anche solo "young" va bene) perchè è 'l'epresione con cui viene fatto riferimenbto al fenomeno che vogliamo studiare. Ho provcato altri sinonimi come:
+-   **trigram: (**caso della Germania**)** per la rappresentazione che ci piace vanno almneo scelte all'inizio le prima 2/3 parole, nel caso delle slides "he"or "she". Io ho scelto "*young-people*" { 3 } () n° occorrenze), perchè è l'espressione con cui viene fatto riferimento al fenomeno che vogliamo studiare. Ho provcato altri sinonimi come:
 
-    -   adolescent.
+    1.  adolescent. { 0 }
 
-    -   junior.
+    2.  junior. { 0 }
 
-    -   juvenile.
+    3.  juvenile. { 0 }
 
-    -   minor.
+    4.  minor. { 0 }
 
-    -   pubescent.
+    5.  pubescent. { 0 }
 
-    -   teenybopper.
+    6.  **young person**. { 0 }
 
-    -   **young person**.
+    7.  youngster. { 0 }
 
-    -   youngster.
+Tuttavia nessuno di questi è presente, quindi ho proceduto con una completa lettura del PNR per fare una doppia verifica che non esistessero equivalenti. Ho scoperto che ad un ncerto puntosi parla di fasce di età, si cita \\13 enni e 154 enni, nella forma inglese 13, 14 year-old. Compare in un singolo passagio del piano ( pagina 8, a proposito di Reskill and upskill ) e non mi è sembrato sufficiente per includerlo nelle analisi. A questo punto ho cercato il contratrio, cioè "vecchi" da contrapporre a "young" ma anche in questo caso la parola non compare procedendo con la medesima operazione, provando con:
 
-Tuttavia nessuno di essi è presente, quindi ho proceduto con una lettura del PNR per fare una doppia verifica.
+1.  elderly **person**. { 0 }
+
+2.  ***senior citizen*** { 0 }
+
+3.   aged. { 0 }
+
+4.   elders. { 0 }
+
+5.   seniors. { 0 }
+
+6.   **retires**. { 0 }
+
+7.   **pensioner**. { 0 }
+
+Quindi procedo con la parola "pension" questa ha un numero di occorrenze pari a { 22 } e output in .pdf è prodotto. Mi accorgo che ci sono molte preposizioni e altre parole oin più, vanno tolte. RIsultati più pregni di significato ma meno d'impatto a livello visuale.

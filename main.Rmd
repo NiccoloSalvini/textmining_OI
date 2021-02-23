@@ -27,7 +27,7 @@ knitr::opts_chunk$set(
 ## load libraries
 if (!require("pacman")) install.packages("pacman")
 
-pacman::p_load(tidyverse, tidytext, wordcloud, reshape2, scales, magick, ggplot2, latex2exp, pdftools)
+pacman::p_load(tidyverse, tidytext, wordcloud, reshape2, scales, magick, ggplot2, latex2exp, pdftools, purrrlyr)
 
 ## base_color = "#1c5253",
 ## header_font_google = google_font("Rubik"),
@@ -39,7 +39,9 @@ pacman::p_load(tidyverse, tidytext, wordcloud, reshape2, scales, magick, ggplot2
 
 
 ```{r loadddata}
-library(forcats)
+
+library(forcats, warn.conflicts = F, quietly = T)
+
 francia = pdf_text("data/francia.pdf") %>%
   readr::read_lines() %>%  
   str_squish() %>% 
@@ -318,13 +320,14 @@ clen_pnrs %>%
 ```{r wordcloudGER}
 
 
-clen_pnrs%>% 
+clen_pnrs %>% 
   filter(paese == "germania") %>% 
   inner_join(bing) %>%
   count(word, sentiment, sort = TRUE) %>%
   acast(word ~ sentiment, value.var = "n", fill = 0) %>%
   comparison.cloud(colors = c("#F8766D", "#00BFC4"),
                    max.words = 100)
+ggsave("figures/wdc_ger", dpi = "retina")
 ```
 
 
@@ -334,11 +337,13 @@ clen_pnrs %>%
   inner_join(fr_sent) %>%
   count(word, polarity, sort = TRUE) %>%
   acast(word ~ polarity, value.var = "n", fill = 0) %>%
-  comparison.cloud(colors = c("#F8766D", "#00BFC4"),
+  comparison.cloud(colors = c("#F8766D", "#5EF1F1"),
                    max.words = 100)
+ggsave("figures/wdc_fra", dpi = "retina")
 ```
 
 
+## Getting Trigrams
 
 ```{r gerTrigramstart}
 # param set
@@ -347,13 +352,19 @@ n_top <- 150
 n_gramming <- 3
  
 ## Trigrams fro German PNR 
-trigrams <- tibble(text = germania) %>%
-  select(text) 
+trigrams <- germania %>%
   unnest_tokens(trigram, text, token = "ngrams", n = n_gramming)
 
-start_words <- c("young", "years-old")
+start_words <- c("young", "pension")
+
+## verifica presenza parole 
+## 
+# germania %>% 
+#   filter(str_detect(text, "pension"))
 
 ```
+
+
 
 ```{r gerTrigrammean}
 ## top 150 trigrams using count and some regex magi
@@ -365,7 +376,7 @@ top_words <- trigrams %>%
   pull(trigram)
 trigrams <- trigrams %>%
   filter(trigram %in% top_words)
-## trova i nodi
+## trova i nodi (stopworded)
 str_nth_word <- function(x, n, sep = " ") {
   str_split(x, pattern = " ") %>%
   map_chr(~ .x[n])
@@ -377,17 +388,20 @@ nodes <- map_df(seq_len(n_gramming),
            slice(seq_len(n_word)) %>% 
            mutate(y = seq(from = n_word + 1, to = 0, 
                           length.out = n() + 2)[seq_len(n()) + 1],
-                  x = .x))
+                  x = .x)) %>% 
+   anti_join(get_stopwords(language = "en"))
 ## plot of node positions (check point)
 # nodes %>% 
 #   ggplot(aes(x, y, label = word))+
 #   geom_text()
+  
 sigmoid <- function(x_from, x_to, y_from, y_to, scale = 5, n = 100) {
   x <- seq(-scale, scale, length = n)
   y <- exp(x) / (exp(x) + 1)
   tibble(x = (x + scale) / (scale * 2) * (x_to - x_from) + x_from,
          y = y * (y_to - y_from) + y_from)
 }
+
 egde_lines <- function(trigram, from_word, to_word, scale = 5, n = 50, 
                        x_space = 0) {
   from_word <- from_word %>%
@@ -462,7 +476,7 @@ second_word_she <- nodes %>%
   ) %>%
   replace_na(list(n = 0))
 # Words in third colunm
-## That start with he
+## That start with he (stopworded)
 third_word_he <- nodes %>%
   filter(x == 3) %>%
   select(-n) %>%
@@ -473,8 +487,9 @@ third_word_he <- nodes %>%
       count(word), 
     by = "word"
   ) %>%
-  replace_na(list(n = 0))
-## That start with she
+  replace_na(list(n = 0)) %>%   
+  anti_join(get_stopwords(language = "en"))
+## That start with she (stopworded)
 third_word_she <- nodes %>%
   filter(x == 3) %>%
   select(-n) %>%
@@ -485,7 +500,8 @@ third_word_she <- nodes %>%
       count(word), 
     by = "word"
   ) %>%
-  replace_na(list(n = 0))
+  replace_na(list(n = 0)) %>%
+  anti_join(get_stopwords(language = "en"))
 # egdes between second and third column that starts with he
 egde2_he <- egde_lines(filter(trigrams, 
                               str_detect(trigram, paste0("^", start_words[1], " "))), 
@@ -504,6 +520,7 @@ egde2_she <- egde_lines(filter(trigrams,
   filter(number > 0)
 # All edges
 edges <- bind_rows(egde1, egde2_he, egde2_she)
+
 p <- nodes %>% 
   ggplot(aes(x, y, label = word, size = n)) +
   geom_text(hjust = 0, color = "white") +
@@ -518,6 +535,8 @@ p <- nodes %>%
   theme(plot.background = element_rect(fill ="#1c5253", colour = 'black'),
         text = element_text(color = "#1c5253", size = 15))
 p
+
+ggsave("figures/trigrams_ger.pdf", dpi = "retina")
 ```
 
 

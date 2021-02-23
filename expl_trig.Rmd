@@ -1,0 +1,133 @@
+---
+title: "Explore Trigrams (Ger - Fra)"
+runtime: shiny
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, 
+                      message = FALSE, 
+                      warning = FALSE)
+```
+
+```{r echo = FALSE}
+library(tidyverse, warn.conflicts = F, quietly = T)
+library(scales, warn.conflicts = F, quietly = T)
+library(glue, warn.conflicts = F, quietly = T)
+library(shiny, warn.conflicts = F, quietly = T)
+library(plotly, warn.conflicts = F, quietly = T)
+library(tidytext, warn.conflicts = F, quietly = T)
+library(pdftools, warn.conflicts = F, quietly = T)
+library(purrrlyr, warn.conflicts = F, quietly = T)
+library(forcats, warn.conflicts = F, quietly = T)
+
+## drake 
+
+francia = pdf_text("data/francia.pdf") %>%
+  readr::read_lines() %>%  
+  str_squish() %>% 
+  as_tibble() %>% 
+  mutate(paese= forcats::as_factor("francia")) %>% 
+  rename(text = value)
+
+germania = pdf_text("data/germania.pdf") %>%
+  readr::read_lines() %>%
+   str_squish() %>%  
+  as_tibble() %>% 
+  mutate(paese= forcats::as_factor("germania")) %>% 
+  rename(text = value)
+
+```
+
+Most expensive lines in terms of cost/km:
+
+```{r eruptions, echo=FALSE}
+metrics <- c("Cost / KM (millions USD)" = "cost_km_millions",
+             "Length (KM)" = "length",
+             "Stations / KM" = "station_density")
+
+inputPanel(
+  
+  textInput("prima_parola", "Prima Parola:", "ex...'pensions'"),
+  
+  textInput("seconda_parola", "Seconda Parola:", "ex... 'young'"),
+  
+  # selectInput("metric", label = "Second Word:", choices = metrics,
+  #             selected = metrics[1]),
+  # 
+  # sliderInput("num_lines", label = "# of lines to show:",
+  #             min = 1, max = 30, value = 16, step = 1)
+)
+
+transit_cost_country <- reactive({
+  transit_cost %>%
+    filter(country == input$country)
+})
+
+renderPlotly({
+  metric <- input$metric
+  x_axis_lab <- names(metrics)[metrics == metric]
+  
+  g <- transit_cost_country() %>%
+    arrange(desc(!!sym(metric))) %>%
+    head(input$num_lines) %>%
+    mutate(line = reorder_within(line, !!sym(metric), city)) %>%
+    ggplot(aes(!!sym(metric), line, fill = city)) +
+    geom_col() +
+    scale_y_reordered() +
+    labs(x = x_axis_lab,
+         y = "",
+         color = "City")
+  
+  if (metric %in% c("cost_km_millions")) {
+    g <- g + scale_x_continuous(labels = dollar)
+  }
+  
+  ggplotly(g)
+})
+```
+
+
+```{r app, echo=FALSE}
+metrics <- c("Cost / KM (millions USD)" = "cost_km_millions",
+             "Length (KM)" = "length",
+             "Stations / KM" = "station_density")
+
+inputPanel(
+  
+  textInput("prima_parola", "Prima Parola:", "ex...'pensions'"),
+  
+  textInput("seconda_parola", "Seconda Parola:", "ex... 'young'"),
+  
+  textInput("seconda_parola", "Seconda Parola:", "ex... 'young'")
+  
+)
+
+transit_cost_country <- reactive({
+  transit_cost %>%
+    filter(country == input$country)
+})
+
+renderPlotly({
+  metric <- input$metric
+  x_axis_lab <- names(metrics)[metrics == metric]
+  
+  g <- transit_cost_country() %>%
+    arrange(desc(!!sym(metric))) %>%
+    head(input$num_lines) %>%
+    mutate(line = reorder_within(line, !!sym(metric), city)) %>%
+    ggplot(aes(!!sym(metric), line, fill = city)) +
+    geom_col() +
+    scale_y_reordered() +
+    labs(x = x_axis_lab,
+         y = "",
+         color = "City")
+  
+  if (metric %in% c("cost_km_millions")) {
+    g <- g + scale_x_continuous(labels = dollar)
+  }
+  
+  ggplotly(g)
+})
+```
+
