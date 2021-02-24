@@ -22,14 +22,14 @@ Tuttavia nessuno di questi è presente, quindi ho proceduto con una completa let
 
 2.  ***senior citizen*** { 0 }
 
-3.   aged. { 0 }
+3.  aged. { 0 }
 
-4.   elders. { 0 }
+4.  elders. { 0 }
 
-5.   seniors. { 0 }
+5.  seniors. { 0 }
 
-6.   **retires**. { 0 }
+6.  **retires**. { 0 }
 
-7.   **pensioner**. { 0 }
+7.  **pensioner**. { 0 }
 
-Quindi procedo con la parola "pension" questa ha un numero di occorrenze pari a { 22 } e output in .pdf è prodotto. Mi accorgo che ci sono molte preposizioni e altre parole oin più, vanno tolte. RIsultati più pregni di significato ma meno d'impatto a livello visuale.
+Quindi procedo con la parola "pension" questa ha un numero di occorrenze pari a { 22 } e output in .pdf è prodotto. Mi accorgo che ci sono molte preposizioni e altre parole oin più, vanno tolte. RIsultati più pregni di significato ma meno d'impatto a livello visuale. Quindi decido di fare una piccola app per esplorare tutte le combinazioni di trigrammi.

@@ -357,7 +357,7 @@ trigrams <- germania %>%
 
 start_words <- c("young", "pension")
 
-## verifica presenza parole 
+## verifica presenza parole   
 ## 
 # germania %>% 
 #   filter(str_detect(text, "pension"))
