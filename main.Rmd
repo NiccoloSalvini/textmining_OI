@@ -386,10 +386,9 @@ nodes <- map_df(seq_len(n_gramming),
            mutate(word = str_nth_word(trigram, .x)) %>%
            count(word, sort = TRUE) %>%
            slice(seq_len(n_word)) %>% 
-           mutate(y = seq(from = n_word + 1, to = 0, 
-                          length.out = n() + 2)[seq_len(n()) + 1],
-                  x = .x)) %>% 
-   anti_join(get_stopwords(language = "en"))
+           mutate(y = seq(from = n_word + 1, to = 0, length.out = n() + 2)[seq_len(n()) + 1],
+                  x = .x)) %>%
+  anti_join(get_stopwords(language = "en"))
 ## plot of node positions (check point)
 # nodes %>% 
 #   ggplot(aes(x, y, label = word))+
@@ -434,7 +433,7 @@ egde_lines <- function(trigram, from_word, to_word, scale = 5, n = 50,
 ### check up edges 
 ### 
 # egde_lines(trigram = trigrams, 
-#            from_word = filter(nodes, x == 1), 
+#            from_word = filter(nodes, x == 1),   
 #            to_word = filter(nodes, x == 2)) %>%
 #   filter(number > 0) %>%
 #   ggplot(aes(x, y, group = word_pair, alpha = number, color = from)) +
@@ -540,3 +539,152 @@ ggsave("figures/trigrams_ger.pdf", dpi = "retina")
 ```
 
 
+
+
+## Topic Mining 
+
+goal: quali sono i maggiori temi per sezione (divisione del docuemento)
+
+```{r topicmodels}
+library(topicmodels)
+
+## Secondo metodo non supervisionato 
+## 
+# 
+# sec_by_word_ger = germania %>%
+#   unnest_tokens(word, text) %>%
+#   anti_join(get_stopwords(language = "en")) %>%  
+#   mutate(sect = cumsum(str_detect(
+#     text, regex("^chapter ", ignore_case = TRUE)
+#   )))
+# 
+# 
+# ger_by_sec = germania %>%
+#   mutate(
+#     sect = case_when(
+#       str_detect(text, regex("^chapter ", ignore_case = TRUE)) ~ "summary",
+#       str_detect(text, regex("^chapter ", ignore_case = TRUE)) ~ "summary",
+#       str_detect(text, regex("^chapter ", ignore_case = TRUE)) ~ "summary",
+#       str_detect(text, regex("^chapter ", ignore_case = TRUE)) ~ "summary",
+#       str_detect(text, regex("^chapter ", ignore_case = TRUE)) ~ "summary",
+#       str_detect(text, regex("^chapter ", ignore_case = TRUE)) ~ "summary"
+#     )
+#   ) 
+
+
+## labelling manuale 
+
+ger_sec_1 = pdftools::pdf_text("data/germania.pdf")[7:9] %>%  
+  readr::read_lines() %>% 
+  str_squish() %>% 
+  as_tibble() %>% 
+  mutate(paese= forcats::as_factor("germania"),
+         sect = forcats::as_factor("Summary")) %>% 
+  rename(text = value)
+
+ger_sec_2 = pdftools::pdf_text("data/germania.pdf")[11] %>%  
+  readr::read_lines() %>% 
+  str_squish() %>% 
+  as_tibble() %>% 
+  mutate(paese= forcats::as_factor("germania"),
+         sect = forcats::as_factor("Financial framework")) %>% 
+  rename(text = value)
+
+ger_sec_3 = pdftools::pdf_text("data/germania.pdf")[13:15] %>%  
+  readr::read_lines() %>% 
+  str_squish() %>% 
+  as_tibble() %>% 
+  mutate(paese= forcats::as_factor("germania"),
+         sect = forcats::as_factor("Linking the plan with the European Semester")) %>% 
+  rename(text = value)
+
+ger_sec_4 = pdftools::pdf_text("data/germania.pdf")[17:19] %>%  
+  readr::read_lines() %>% 
+  str_squish() %>% 
+  as_tibble() %>% 
+  mutate(paese= forcats::as_factor("germania"),
+         sect = forcats::as_factor("Description of investment measures and reforms")) %>% 
+  rename(text = value)
+
+ger_sec_5 = pdftools::pdf_text("data/germania.pdf")[21:41] %>%  
+  readr::read_lines() %>% 
+  str_squish() %>% 
+  as_tibble() %>% 
+  mutate(paese= forcats::as_factor("germania"),
+         sect = forcats::as_factor("Details of focus areas for measures and components")) %>% 
+  rename(text = value)
+
+ger_sec_6 = pdftools::pdf_text("data/germania.pdf")[43] %>%  
+  readr::read_lines() %>% 
+  str_squish() %>% 
+  as_tibble() %>% 
+  mutate(paese= forcats::as_factor("germania"),
+         sect = forcats::as_factor("Institutional governance of the German Recovery and Resilience Plan")) %>% 
+  rename(text = value)
+
+
+ger_doc = bind_rows(ger_sec_1, ger_sec_2, ger_sec_3, ger_sec_4, ger_sec_5, ger_sec_6)
+
+
+ger_by_sec_word = ger_doc %>% 
+  unnest_tokens(word, text) %>% 
+  anti_join(get_stopwords(language = "en")) %>% 
+  count(sect, word, sort = TRUE)
+
+dtm_ger = ger_by_sec_word %>% 
+  cast_dtm(sect, word, n)
+
+library(glue)
+
+## fitting model
+ger_lda <- LDA(dtm_ger, k = 7, control = list(seed = 2021))
+ger_lda_tidy <- tidy(ger_lda, matrix = "beta")
+ger_lda_tidy %>%  head(15)
+```
+
+Nota che a questo punto l'operazione ha cambaito il modello nel foprmato: 1-argomento-per-riga. PEr ogni combinazione il modello calcola la probabilita che quel termina veng da quel preciso argomento. Per esempio il termine "digital" ha probabilità `r glue("{ger_lda_tidy %>%  select(beta) %>%  slice(1) %>%  round(3)}%")` di appartenere all'arogmento 1, e invece probavilità `r glue("{ger_lda_tidy %>%  select(beta) %>%  slice(2) %>%  round(3)}%")` di appartenere al 2, probabilità `r glue("{ger_lda_tidy %>%  select(beta) %>%  slice(3) %>%  round(3)}%")` di appartenere al 3.
+
+Vedo le top 10 parole e posso desumere che il tema a SX riguarda **l'Economia-Finanza**, a DX **Politica**
+
+```{r toptermds}
+
+top_terms <- ger_lda_tidy %>%
+  group_by(topic) %>%
+  slice_max(beta, n = 10, with_ties = FALSE) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+
+top_terms %>%
+  mutate(term = reorder_within(term, beta, topic)) %>%
+  ggplot(aes(beta, term, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free") +
+  scale_y_reordered()+ 
+  xlab(" ") +
+  theme(axis.text.x = element_text(angle = 60, vjust = 0.5, hjust=1))
+  
+```
+
+
+##  Ma puoi anche fare cosi'
+
+Puoi anche andare a vedere le differenze maggiori tra score di probabilità, chiamala $\beta$, tra le parole e andarle a comparare nuovamente i due topics. In questa maniera filtri sole le parole meno comuni, quindi quelle potenzialmente più pregne di significato.
+
+```{r oddsratio}
+beta_spread <- ap_topics %>%
+  mutate(topic = paste0("topic", topic)) %>%
+  spread(topic, beta) %>%
+  filter(topic1 > .001 | topic2 > .001) %>%
+  mutate(log_ratio = log2(topic2 / topic1))
+beta_spread %>%
+  group_by(direction = log_ratio > 0) %>%
+  top_n(10, abs(log_ratio)) %>%
+  ungroup() %>%
+  mutate(term = reorder(term, log_ratio)) %>%
+  ggplot(aes(log_ratio, term)) +
+  geom_col() +
+  labs(
+    x = "Log2 odds ratio dei betas tra topic 2 / topic 1",
+    y = ""
+    )+ 
+  theme_xaringan()

@@ -30,6 +30,16 @@ Tuttavia nessuno di questi è presente, quindi ho proceduto con una completa let
 
 6.  **retires**. { 0 }
 
-7.  **pensioner**. { 0 }
+7.  **zpensioner**. { 0 }
 
 Quindi procedo con la parola "pension" questa ha un numero di occorrenze pari a { 22 } e output in .pdf è prodotto. Mi accorgo che ci sono molte preposizioni e altre parole oin più, vanno tolte. RIsultati più pregni di significato ma meno d'impatto a livello visuale. Quindi decido di fare una piccola app per esplorare tutte le combinazioni di trigrammi.
+
+-   **Topic modelling:**
+
+    Qui prendo il documento della germania, se voglio trovare i topics col metodo descritto melle slides è necessario o che divida il docuemtno in chapters/sections, o che consideri tutto il documento intero e tiri fuori il topic principale, ma onestamente per questo ultima cosa non c'è assolutaemnte biaogno di fare topic modellin per farlo è sufficiente un counting words con il peso TF-IDF. Quindi faccio il tentativo a dividere in sezioni anche se non è proprio semplice. per farlo ci sono 2 modi:
+
+    1.   puoi suddividere il pdf per pagine darto che quando lo leggi sul software viene letta pagina per pagina e tu in maniera supervisionata applichi una label per ogni sezione, va bene per documenti con poche sezioni
+
+    2.  se estrai il pdf intero senza la soddivisione per pagine è posssibile mutare una colonna attribuendole una label se matcha un preciso regex
+
+        ----
