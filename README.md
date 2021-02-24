@@ -7,7 +7,7 @@
 
 *author*: **[Nicolò Foppiani](https://github.com/nfoppiani)** <br>
 *author*: **[Niccolò Salvini](https://niccolosalvini.netlify.app/)**
-<br> *last build date*: 23 febbraio, 2021
+<br> *last build date*: 24 febbraio, 2021
 
 <br> <br>
 
@@ -69,6 +69,7 @@ successivamente compila il documento `main.R` col comando **knit**
 -   [x] build **wordclouds**
 -   [ ] obtain all **PNRs**
 -   [ ] build minimal shiny app to explore trigram
+-   [ ] topic modelling
 
 ## Licenza:
 
