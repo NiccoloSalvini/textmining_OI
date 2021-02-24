@@ -69,7 +69,7 @@ successivamente compila il documento `main.R` col comando **knit**
 -   [x] build **wordclouds**
 -   [ ] obtain all **PNRs**
 -   [ ] build minimal shiny app to explore trigram
--   [ ] topic modelling
+-   [x] topic modelling
 
 ## Licenza:
 

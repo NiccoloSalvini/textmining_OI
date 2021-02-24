@@ -93,7 +93,7 @@ Apri il file di progetto nella cartella clonata `textmining_OI.Rproj`, successiv
 - [x] build **wordclouds**
 - [ ] obtain all **PNRs**
 - [ ] build minimal shiny app to explore trigram
-- [ ] topic modelling 
+- [x] topic modelling 
 
 ## Licenza:
 
