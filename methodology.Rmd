@@ -1,0 +1,45 @@
+## Metodologia
+
+-   **trigram: (**caso della Germania**)** per la rappresentazione che ci piace vanno almneo scelte all'inizio le prima 2/3 parole, nel caso delle slides "he"or "she". Io ho scelto "*young-people*" { 3 } () n° occorrenze), perchè è l'espressione con cui viene fatto riferimento al fenomeno che vogliamo studiare. Ho provcato altri sinonimi come:
+
+    1.  adolescent. { 0 }
+
+    2.  junior. { 0 }
+
+    3.  juvenile. { 0 }
+
+    4.  minor. { 0 }
+
+    5.  pubescent. { 0 }
+
+    6.  **young person**. { 0 }
+
+    7.  youngster. { 0 }
+
+Tuttavia nessuno di questi è presente, quindi ho proceduto con una completa lettura del PNR per fare una doppia verifica che non esistessero equivalenti. Ho scoperto che ad un ncerto puntosi parla di fasce di età, si cita \\13 enni e 154 enni, nella forma inglese 13, 14 year-old. Compare in un singolo passagio del piano ( pagina 8, a proposito di Reskill and upskill ) e non mi è sembrato sufficiente per includerlo nelle analisi. A questo punto ho cercato il contratrio, cioè "vecchi" da contrapporre a "young" ma anche in questo caso la parola non compare procedendo con la medesima operazione, provando con:
+
+1.  elderly **person**. { 0 }
+
+2.  ***senior citizen*** { 0 }
+
+3.  aged. { 0 }
+
+4.  elders. { 0 }
+
+5.  seniors. { 0 }
+
+6.  **retires**. { 0 }
+
+7.  **zpensioner**. { 0 }
+
+Quindi procedo con la parola "pension" questa ha un numero di occorrenze pari a { 22 } e output in .pdf è prodotto. Mi accorgo che ci sono molte preposizioni e altre parole oin più, vanno tolte. RIsultati più pregni di significato ma meno d'impatto a livello visuale. Quindi decido di fare una piccola app per esplorare tutte le combinazioni di trigrammi.
+
+-   **Topic modelling:**
+
+    Qui prendo il documento della germania, se voglio trovare i topics col metodo descritto melle slides è necessario o che divida il docuemtno in chapters/sections, o che consideri tutto il documento intero e tiri fuori il topic principale, ma onestamente per questo ultima cosa non c'è assolutaemnte biaogno di fare topic modellin per farlo è sufficiente un counting words con il peso TF-IDF. Quindi faccio il tentativo a dividere in sezioni anche se non è proprio semplice. per farlo ci sono 2 modi:
+
+    1.   puoi suddividere il pdf per pagine darto che quando lo leggi sul software viene letta pagina per pagina e tu in maniera supervisionata applichi una label per ogni sezione, va bene per documenti con poche sezioni
+
+    2.  se estrai il pdf intero senza la soddivisione per pagine è posssibile mutare una colonna attribuendole una label se matcha un preciso regex
+
+        ----

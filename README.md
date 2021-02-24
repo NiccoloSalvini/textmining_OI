@@ -7,7 +7,7 @@
 
 *author*: **[Nicolò Foppiani](https://github.com/nfoppiani)** <br>
 *author*: **[Niccolò Salvini](https://niccolosalvini.netlify.app/)**
-<br> *last build date*: 22 febbraio, 2021
+<br> *last build date*: 23 febbraio, 2021
 
 <br> <br>
 
@@ -62,12 +62,13 @@ Clona la repo in locale col comando
 Apri il file di progetto nella cartella clonata `textmining_OI.Rproj`,
 successivamente compila il documento `main.R` col comando **knit**
 
-## To-Do list
+## To-Do list:
 
--   [ ] Serve a site ([blogdown](https://bookdown.org/yihui/blogdown/))
--   [x] Creating *trigrams* Giovani - non Giovani
+-   [ ] serve a site ([blogdown](https://bookdown.org/yihui/blogdown/))
+-   [x] creating *trigrams* Giovani - non Giovani
 -   [x] build **wordclouds**
--   [ ] obtain all PNRs
+-   [ ] obtain all **PNRs**
+-   [ ] build minimal shiny app to explore trigram
 
 ## Licenza:
 

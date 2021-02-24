@@ -27,7 +27,7 @@ knitr::opts_chunk$set(
 ## load libraries
 if (!require("pacman")) install.packages("pacman")
 
-pacman::p_load(tidyverse, tidytext, wordcloud, reshape2, scales, magick, ggplot2, latex2exp, pdftools)
+pacman::p_load(tidyverse, tidytext, wordcloud, reshape2, scales, magick, ggplot2, latex2exp, pdftools, purrrlyr)
 
 ## base_color = "#1c5253",
 ## header_font_google = google_font("Rubik"),
@@ -39,7 +39,9 @@ pacman::p_load(tidyverse, tidytext, wordcloud, reshape2, scales, magick, ggplot2
 
 
 ```{r loadddata}
-library(forcats)
+
+library(forcats, warn.conflicts = F, quietly = T)
+
 francia = pdf_text("data/francia.pdf") %>%
   readr::read_lines() %>%  
   str_squish() %>% 
@@ -318,13 +320,14 @@ clen_pnrs %>%
 ```{r wordcloudGER}
 
 
-clen_pnrs%>% 
+clen_pnrs %>% 
   filter(paese == "germania") %>% 
   inner_join(bing) %>%
   count(word, sentiment, sort = TRUE) %>%
   acast(word ~ sentiment, value.var = "n", fill = 0) %>%
   comparison.cloud(colors = c("#F8766D", "#00BFC4"),
                    max.words = 100)
+ggsave("figures/wdc_ger", dpi = "retina")
 ```
 
 
@@ -334,9 +337,354 @@ clen_pnrs %>%
   inner_join(fr_sent) %>%
   count(word, polarity, sort = TRUE) %>%
   acast(word ~ polarity, value.var = "n", fill = 0) %>%
-  comparison.cloud(colors = c("#F8766D", "#00BFC4"),
+  comparison.cloud(colors = c("#F8766D", "#5EF1F1"),
                    max.words = 100)
+ggsave("figures/wdc_fra", dpi = "retina")
+```
+
+
+## Getting Trigrams
+
+```{r gerTrigramstart}
+# param set
+n_word <- 20
+n_top <- 150
+n_gramming <- 3
+ 
+## Trigrams fro German PNR 
+trigrams <- germania %>%
+  unnest_tokens(trigram, text, token = "ngrams", n = n_gramming)
+
+start_words <- c("young", "pension")
+
+## verifica presenza parole   
+## 
+# germania %>% 
+#   filter(str_detect(text, "pension"))
+
 ```
 
 
 
+```{r gerTrigrammean}
+## top 150 trigrams using count and some regex magi
+pattern <- str_c("^", start_words, " ", collapse = "|")
+top_words <- trigrams %>%
+  filter(str_detect(trigram, pattern)) %>%
+  count(trigram, sort = TRUE) %>%
+  slice(seq_len(n_top)) %>%
+  pull(trigram)
+trigrams <- trigrams %>%
+  filter(trigram %in% top_words)
+## trova i nodi (stopworded)
+str_nth_word <- function(x, n, sep = " ") {
+  str_split(x, pattern = " ") %>%
+  map_chr(~ .x[n])
+}
+nodes <- map_df(seq_len(n_gramming),
+       ~ trigrams %>%
+           mutate(word = str_nth_word(trigram, .x)) %>%
+           count(word, sort = TRUE) %>%
+           slice(seq_len(n_word)) %>% 
+           mutate(y = seq(from = n_word + 1, to = 0, length.out = n() + 2)[seq_len(n()) + 1],
+                  x = .x)) %>%
+  anti_join(get_stopwords(language = "en"))
+## plot of node positions (check point)
+# nodes %>% 
+#   ggplot(aes(x, y, label = word))+
+#   geom_text()
+  
+sigmoid <- function(x_from, x_to, y_from, y_to, scale = 5, n = 100) {
+  x <- seq(-scale, scale, length = n)
+  y <- exp(x) / (exp(x) + 1)
+  tibble(x = (x + scale) / (scale * 2) * (x_to - x_from) + x_from,
+         y = y * (y_to - y_from) + y_from)
+}
+
+egde_lines <- function(trigram, from_word, to_word, scale = 5, n = 50, 
+                       x_space = 0) {
+  from_word <- from_word %>%
+    select(-n) %>%
+    set_names(c("from", "y_from", "x_from"))
+  
+  to_word <- to_word %>%
+    select(-n) %>%
+    set_names(c("to", "y_to", "x_to"))
+  
+  links <- crossing(from = from_word$from, 
+                    to = to_word$to) %>%
+    mutate(word_pair = paste(from, to),
+           number = map_dbl(word_pair, 
+                            ~ sum(str_detect(trigram$trigram, .x)))) %>%
+    left_join(from_word, by = "from") %>%
+    left_join(to_word, by = "to")
+  
+  links %>%
+    by_row(~ sigmoid(x_from = .x$x_from + 0.2 + x_space,
+                     x_to = .x$x_to - 0.05, 
+                     y_from = .x$y_from, y_to = .x$y_to, 
+                     scale = scale, n = n) %>%
+    mutate(word_pair = .x$word_pair,
+           number = .x$number,
+           from = .x$from)) %>%
+    pull(.out) %>%
+    bind_rows()
+}
+### check up edges 
+### 
+# egde_lines(trigram = trigrams, 
+#            from_word = filter(nodes, x == 1),   
+#            to_word = filter(nodes, x == 2)) %>%
+#   filter(number > 0) %>%
+#   ggplot(aes(x, y, group = word_pair, alpha = number, color = from)) +
+#   geom_line()
+#   
+```
+
+```{r calcedges}
+# egdes between first and second column
+egde1 <- egde_lines(trigram = trigrams, 
+           from_word = filter(nodes, x == 1), 
+           to_word = filter(nodes, x == 2), 
+           n = 50) %>%
+           filter(number > 0) %>%
+  mutate(id = word_pair)
+# Words in second colunm
+## That start with he
+second_word_he <- nodes %>%
+  filter(x == 2) %>%
+  select(-n) %>%
+  left_join(
+    trigrams %>% 
+      filter(str_nth_word(trigram, 1) == start_words[1]) %>%
+      mutate(word = str_nth_word(trigram, 2)) %>%
+      count(word), 
+    by = "word"
+  ) %>%
+  replace_na(list(n = 0))
+## That start with she
+second_word_she <- nodes %>%
+  filter(x == 2) %>%
+  select(-n) %>%
+  left_join(
+    trigrams %>% 
+      filter(str_nth_word(trigram, 1) == start_words[2]) %>%
+      mutate(word = str_nth_word(trigram, 2)) %>%
+      count(word), 
+    by = "word"
+  ) %>%
+  replace_na(list(n = 0))
+# Words in third colunm
+## That start with he (stopworded)
+third_word_he <- nodes %>%
+  filter(x == 3) %>%
+  select(-n) %>%
+  left_join(
+    trigrams %>% 
+      filter(str_nth_word(trigram, 1) == start_words[1]) %>%
+      mutate(word = str_nth_word(trigram, 3)) %>%
+      count(word), 
+    by = "word"
+  ) %>%
+  replace_na(list(n = 0)) %>%   
+  anti_join(get_stopwords(language = "en"))
+## That start with she (stopworded)
+third_word_she <- nodes %>%
+  filter(x == 3) %>%
+  select(-n) %>%
+  left_join(
+    trigrams %>% 
+      filter(str_nth_word(trigram, 1) == start_words[2]) %>%
+      mutate(word = str_nth_word(trigram, 3)) %>%
+      count(word), 
+    by = "word"
+  ) %>%
+  replace_na(list(n = 0)) %>%
+  anti_join(get_stopwords(language = "en"))
+# egdes between second and third column that starts with he
+egde2_he <- egde_lines(filter(trigrams, 
+                              str_detect(trigram, paste0("^", start_words[1], " "))), 
+             second_word_he, third_word_he, n = 50) %>%
+  mutate(y = y + 0.05,
+         from = start_words[1],
+         id = str_c(from, word_pair, sep = " ")) %>%
+  filter(number > 0)
+# egdes between second and third column that starts with she
+egde2_she <- egde_lines(filter(trigrams, 
+                              str_detect(trigram, paste0("^", start_words[2], " "))), 
+             second_word_she, third_word_she, n = 50) %>%
+  mutate(y = y - 0.05,
+         from = start_words[2],
+         id = str_c(from, word_pair, sep = " ")) %>%
+  filter(number > 0)
+# All edges
+edges <- bind_rows(egde1, egde2_he, egde2_she)
+
+p <- nodes %>% 
+  ggplot(aes(x, y, label = word, size = n)) +
+  geom_text(hjust = 0, color = "white") +
+  theme_void() +
+  geom_line(data = edges,
+            aes(x, y, group = id, color = from, alpha = sqrt(number)),
+            inherit.aes = FALSE) +
+  guides(alpha = "none", color = "none", size = "none") +
+  xlim(c(0.9, 3.2)) +
+  scale_size(range = c(3, 8)) +
+  scale_color_manual(values = c("#5EF1F1", "red")) +
+  theme(plot.background = element_rect(fill ="#1c5253", colour = 'black'),
+        text = element_text(color = "#1c5253", size = 15))
+p
+
+ggsave("figures/trigrams_ger.pdf", dpi = "retina")
+```
+
+
+
+
+## Topic Mining 
+
+goal: quali sono i maggiori temi per sezione (divisione del docuemento)
+
+```{r topicmodels}
+library(topicmodels)
+
+## Secondo metodo non supervisionato 
+## 
+# 
+# sec_by_word_ger = germania %>%
+#   unnest_tokens(word, text) %>%
+#   anti_join(get_stopwords(language = "en")) %>%  
+#   mutate(sect = cumsum(str_detect(
+#     text, regex("^chapter ", ignore_case = TRUE)
+#   )))
+# 
+# 
+# ger_by_sec = germania %>%
+#   mutate(
+#     sect = case_when(
+#       str_detect(text, regex("^chapter ", ignore_case = TRUE)) ~ "summary",
+#       str_detect(text, regex("^chapter ", ignore_case = TRUE)) ~ "summary",
+#       str_detect(text, regex("^chapter ", ignore_case = TRUE)) ~ "summary",
+#       str_detect(text, regex("^chapter ", ignore_case = TRUE)) ~ "summary",
+#       str_detect(text, regex("^chapter ", ignore_case = TRUE)) ~ "summary",
+#       str_detect(text, regex("^chapter ", ignore_case = TRUE)) ~ "summary"
+#     )
+#   ) 
+
+
+## labelling manuale 
+
+ger_sec_1 = pdftools::pdf_text("data/germania.pdf")[7:9] %>%  
+  readr::read_lines() %>% 
+  str_squish() %>% 
+  as_tibble() %>% 
+  mutate(paese= forcats::as_factor("germania"),
+         sect = forcats::as_factor("Summary")) %>% 
+  rename(text = value)
+
+ger_sec_2 = pdftools::pdf_text("data/germania.pdf")[11] %>%  
+  readr::read_lines() %>% 
+  str_squish() %>% 
+  as_tibble() %>% 
+  mutate(paese= forcats::as_factor("germania"),
+         sect = forcats::as_factor("Financial framework")) %>% 
+  rename(text = value)
+
+ger_sec_3 = pdftools::pdf_text("data/germania.pdf")[13:15] %>%  
+  readr::read_lines() %>% 
+  str_squish() %>% 
+  as_tibble() %>% 
+  mutate(paese= forcats::as_factor("germania"),
+         sect = forcats::as_factor("Linking the plan with the European Semester")) %>% 
+  rename(text = value)
+
+ger_sec_4 = pdftools::pdf_text("data/germania.pdf")[17:19] %>%  
+  readr::read_lines() %>% 
+  str_squish() %>% 
+  as_tibble() %>% 
+  mutate(paese= forcats::as_factor("germania"),
+         sect = forcats::as_factor("Description of investment measures and reforms")) %>% 
+  rename(text = value)
+
+ger_sec_5 = pdftools::pdf_text("data/germania.pdf")[21:41] %>%  
+  readr::read_lines() %>% 
+  str_squish() %>% 
+  as_tibble() %>% 
+  mutate(paese= forcats::as_factor("germania"),
+         sect = forcats::as_factor("Details of focus areas for measures and components")) %>% 
+  rename(text = value)
+
+ger_sec_6 = pdftools::pdf_text("data/germania.pdf")[43] %>%  
+  readr::read_lines() %>% 
+  str_squish() %>% 
+  as_tibble() %>% 
+  mutate(paese= forcats::as_factor("germania"),
+         sect = forcats::as_factor("Institutional governance of the German Recovery and Resilience Plan")) %>% 
+  rename(text = value)
+
+
+ger_doc = bind_rows(ger_sec_1, ger_sec_2, ger_sec_3, ger_sec_4, ger_sec_5, ger_sec_6)
+
+
+ger_by_sec_word = ger_doc %>% 
+  unnest_tokens(word, text) %>% 
+  anti_join(get_stopwords(language = "en")) %>% 
+  count(sect, word, sort = TRUE)
+
+dtm_ger = ger_by_sec_word %>% 
+  cast_dtm(sect, word, n)
+
+library(glue)
+
+## fitting model
+ger_lda <- LDA(dtm_ger, k = 7, control = list(seed = 2021))
+ger_lda_tidy <- tidy(ger_lda, matrix = "beta")
+ger_lda_tidy %>%  head(15)
+```
+
+Nota che a questo punto l'operazione ha cambaito il modello nel foprmato: 1-argomento-per-riga. PEr ogni combinazione il modello calcola la probabilita che quel termina veng da quel preciso argomento. Per esempio il termine "digital" ha probabilità `r glue("{ger_lda_tidy %>%  select(beta) %>%  slice(1) %>%  round(3)}%")` di appartenere all'arogmento 1, e invece probavilità `r glue("{ger_lda_tidy %>%  select(beta) %>%  slice(2) %>%  round(3)}%")` di appartenere al 2, probabilità `r glue("{ger_lda_tidy %>%  select(beta) %>%  slice(3) %>%  round(3)}%")` di appartenere al 3.
+
+Vedo le top 10 parole e posso desumere che il tema a SX riguarda **l'Economia-Finanza**, a DX **Politica**
+
+```{r toptermds}
+
+top_terms <- ger_lda_tidy %>%
+  group_by(topic) %>%
+  slice_max(beta, n = 10, with_ties = FALSE) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+
+top_terms %>%
+  mutate(term = reorder_within(term, beta, topic)) %>%
+  ggplot(aes(beta, term, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free") +
+  scale_y_reordered()+ 
+  xlab(" ") +
+  theme(axis.text.x = element_text(angle = 60, vjust = 0.5, hjust=1))
+  
+```
+
+
+##  Ma puoi anche fare cosi'
+
+Puoi anche andare a vedere le differenze maggiori tra score di probabilità, chiamala $\beta$, tra le parole e andarle a comparare nuovamente i due topics. In questa maniera filtri sole le parole meno comuni, quindi quelle potenzialmente più pregne di significato.
+
+```{r oddsratio}
+beta_spread <- ap_topics %>%
+  mutate(topic = paste0("topic", topic)) %>%
+  spread(topic, beta) %>%
+  filter(topic1 > .001 | topic2 > .001) %>%
+  mutate(log_ratio = log2(topic2 / topic1))
+beta_spread %>%
+  group_by(direction = log_ratio > 0) %>%
+  top_n(10, abs(log_ratio)) %>%
+  ungroup() %>%
+  mutate(term = reorder(term, log_ratio)) %>%
+  ggplot(aes(log_ratio, term)) +
+  geom_col() +
+  labs(
+    x = "Log2 odds ratio dei betas tra topic 2 / topic 1",
+    y = ""
+    )+ 
+  theme_xaringan()
