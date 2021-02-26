@@ -661,7 +661,9 @@ top_terms %>%
   facet_wrap(~ topic, scales = "free") +
   scale_y_reordered()+ 
   xlab(" ") +
-  theme(axis.text.x = element_text(angle = 60, vjust = 0.5, hjust=1))
+  theme(axis.text.x = element_text(angle = 25, vjust = 0.5, hjust=1),
+        plot.background = ggplot2::element_blank(),
+        panel.background = ggplot2::element_blank())
   
 ```
 
