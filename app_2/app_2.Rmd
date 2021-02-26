@@ -18,7 +18,7 @@ library(pdftools, warn.conflicts = F, quietly = T)
 library(purrrlyr, warn.conflicts = F, quietly = T)
 library(forcats, warn.conflicts = F, quietly = T)
 library(topicmodels, warn.conflicts = F, quietly = T)
-
+library(htmlwidgets, warn.conflicts = F, quietly = T)
 
 ```
 
@@ -103,20 +103,25 @@ dtm_ger = ger_by_sec_word %>%
 
 
 
+## fitting LDA model
 
+ger_lda <-  reactive({  
+  LDA(dtm_ger, k = input$topics, control = list(seed = 2021))
+})
 
-## fitting model
-ger_lda <- LDA(dtm_ger, k = 7, control = list(seed = 2021))
-ger_lda_tidy <- tidy(ger_lda, matrix = "beta")
+ger_lda_tidy <- reactive({ 
+  tidy(ger_lda(), matrix = "beta")
+})
 
-top_terms <- ger_lda_tidy %>%
+top_terms <- reactive({  ger_lda_tidy() %>%
   group_by(topic) %>%
   slice_max(beta, n = 10, with_ties = FALSE) %>%
   ungroup() %>%
   arrange(topic, -beta)
+})
 
 DT::renderDataTable({
-    DT::datatable(top_terms, 
+    DT::datatable(top_terms(), 
                   options = list(
     lengthChange = FALSE,
     initComplete = JS(
@@ -127,19 +132,22 @@ DT::renderDataTable({
     columnDefs = list(list(width = '70%', targets = 1))
     )
     )
-  })
+})
 
 
 renderPlot({
   
-top_terms %>%
+top_terms() %>%
   mutate(term = reorder_within(term, beta, topic)) %>%
   ggplot(aes(beta, term, fill = factor(topic))) +
   geom_col(show.legend = FALSE) +
   facet_wrap(~ topic, scales = "free") +
   scale_y_reordered()+ 
   xlab(" ") +
-  theme(axis.text.x = element_text(angle = 60, vjust = 0.5, hjust=1))
+  theme(axis.text.x = element_text(angle = 25, vjust = 0.5, hjust=1),
+        plot.background = ggplot2::element_blank(),
+        panel.background = ggplot2::element_blank()
+        )
 
 })
 

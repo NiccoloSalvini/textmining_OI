@@ -19,8 +19,6 @@ library(pdftools, warn.conflicts = F, quietly = T)
 library(purrrlyr, warn.conflicts = F, quietly = T)
 library(forcats, warn.conflicts = F, quietly = T)
 
-setwd(here())
-
 
 ```
 
