@@ -23,10 +23,7 @@ library(htmlwidgets, warn.conflicts = F, quietly = T)
 ```
 
 
-
-## Topic Mining 
-
-goal: quali sono i maggiori temi per sezione (divisione del docuemento)
+**GOAL**: Qual è il numero giusto di _k_ e quali sono i topics associati ad ogni _k_ 
 
 ```{r topicmining}
 
@@ -121,7 +118,8 @@ top_terms <- reactive({  ger_lda_tidy() %>%
 })
 
 DT::renderDataTable({
-    DT::datatable(top_terms(), 
+    DT::datatable(top_terms(),
+                  rownames = FALSE,
                   options = list(
     lengthChange = FALSE,
     initComplete = JS(
@@ -129,30 +127,29 @@ DT::renderDataTable({
       "$(this.api().table().header()).css({'background-color': '#42f', 'color': '#fff'});",
       "}"),
     autowidth = TRUE,
+    language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Italian.json'),
     columnDefs = list(list(width = '70%', targets = 1))
     )
-    )
+    ) %>% 
+    DT::formatPercentage('beta', 2)  %>% 
+    DT::formatStyle('beta', fontWeight = DT::styleInterval(1, c('normal', 'bold'))) 
 })
 
 
 renderPlot({
   
-top_terms() %>%
-  mutate(term = reorder_within(term, beta, topic)) %>%
-  ggplot(aes(beta, term, fill = factor(topic))) +
-  geom_col(show.legend = FALSE) +
-  facet_wrap(~ topic, scales = "free") +
-  scale_y_reordered()+ 
-  xlab(" ") +
-  theme(axis.text.x = element_text(angle = 25, vjust = 0.5, hjust=1),
-        plot.background = ggplot2::element_blank(),
-        panel.background = ggplot2::element_blank()
-        )
+  top_terms() %>%
+    mutate(term = reorder_within(term, beta, topic)) %>%
+    ggplot(aes(beta, term, fill = factor(topic))) +
+    geom_col(show.legend = FALSE) +
+    facet_wrap(~ topic, scales = "free") +
+    scale_y_reordered()+ 
+    xlab(" ") +
+    theme(axis.text.x = element_text(angle = 25, vjust = 0.5, hjust=1),
+          plot.background = ggplot2::element_blank(),
+          panel.background = ggplot2::element_blank()
+          )
 
 })
 
-
-
-
-  
 ```
