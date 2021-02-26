@@ -1,0 +1,150 @@
+---
+title: "Explore Topics (Ger - Fra)"
+runtime: shiny
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, 
+                      message = FALSE, 
+                      warning = FALSE)
+
+library(here, warn.conflicts = F, quietly = T)
+library(tidyverse, warn.conflicts = F, quietly = T)
+library(glue, warn.conflicts = F, quietly = T)
+library(shiny, warn.conflicts = F, quietly = T)
+library(tidytext, warn.conflicts = F, quietly = T)
+library(pdftools, warn.conflicts = F, quietly = T)
+library(purrrlyr, warn.conflicts = F, quietly = T)
+library(forcats, warn.conflicts = F, quietly = T)
+library(topicmodels, warn.conflicts = F, quietly = T)
+
+
+```
+
+
+
+## Topic Mining 
+
+goal: quali sono i maggiori temi per sezione (divisione del docuemento)
+
+```{r topicmining}
+
+## labelling manuale 
+
+ger_sec_1 = pdftools::pdf_text(here("data","germania.pdf"))[7:9] %>%  
+  readr::read_lines() %>% 
+  str_squish() %>% 
+  as_tibble() %>% 
+  mutate(paese= forcats::as_factor("germania"),
+         sect = forcats::as_factor("Summary")) %>% 
+  rename(text = value)
+
+ger_sec_2 = pdftools::pdf_text(here("data", "germania.pdf"))[11] %>%  
+  readr::read_lines() %>% 
+  str_squish() %>% 
+  as_tibble() %>% 
+  mutate(paese= forcats::as_factor("germania"),
+         sect = forcats::as_factor("Financial framework")) %>% 
+  rename(text = value)
+
+ger_sec_3 = pdftools::pdf_text(here("data", "germania.pdf"))[13:15] %>%  
+  readr::read_lines() %>% 
+  str_squish() %>% 
+  as_tibble() %>% 
+  mutate(paese= forcats::as_factor("germania"),
+         sect = forcats::as_factor("Linking the plan with the European Semester")) %>% 
+  rename(text = value)
+
+ger_sec_4 = pdftools::pdf_text(here("data","germania.pdf"))[17:19] %>%  
+  readr::read_lines() %>% 
+  str_squish() %>% 
+  as_tibble() %>% 
+  mutate(paese= forcats::as_factor("germania"),
+         sect = forcats::as_factor("Description of investment measures and reforms")) %>% 
+  rename(text = value)
+
+ger_sec_5 = pdftools::pdf_text(here("data","germania.pdf"))[21:41] %>%  
+  readr::read_lines() %>% 
+  str_squish() %>% 
+  as_tibble() %>% 
+  mutate(paese= forcats::as_factor("germania"),
+         sect = forcats::as_factor("Details of focus areas for measures and components")) %>% 
+  rename(text = value)
+
+ger_sec_6 = pdftools::pdf_text(here("data","germania.pdf"))[43] %>%  
+  readr::read_lines() %>% 
+  str_squish() %>% 
+  as_tibble() %>% 
+  mutate(paese= forcats::as_factor("germania"),
+         sect = forcats::as_factor("Institutional governance of the German Recovery and Resilience Plan")) %>% 
+  rename(text = value)
+
+
+ger_doc = bind_rows(ger_sec_1, ger_sec_2, ger_sec_3, ger_sec_4, ger_sec_5, ger_sec_6)
+
+
+
+inputPanel(
+  
+  numericInput("topics", "N° of Topics (k)", 5, min = 1, max = 20),
+  downloadButton('downloadPlot', 'Download Plot')
+  
+)
+
+
+ger_by_sec_word = ger_doc %>% 
+  unnest_tokens(word, text) %>% 
+  anti_join(get_stopwords(language = "en")) %>% 
+  count(sect, word, sort = TRUE)
+
+dtm_ger = ger_by_sec_word %>% 
+  cast_dtm(sect, word, n)
+
+
+
+
+
+## fitting model
+ger_lda <- LDA(dtm_ger, k = 7, control = list(seed = 2021))
+ger_lda_tidy <- tidy(ger_lda, matrix = "beta")
+
+top_terms <- ger_lda_tidy %>%
+  group_by(topic) %>%
+  slice_max(beta, n = 10, with_ties = FALSE) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+
+DT::renderDataTable({
+    DT::datatable(top_terms, 
+                  options = list(
+    lengthChange = FALSE,
+    initComplete = JS(
+      "function(settings, json) {",
+      "$(this.api().table().header()).css({'background-color': '#42f', 'color': '#fff'});",
+      "}"),
+    autowidth = TRUE,
+    columnDefs = list(list(width = '70%', targets = 1))
+    )
+    )
+  })
+
+
+renderPlot({
+  
+top_terms %>%
+  mutate(term = reorder_within(term, beta, topic)) %>%
+  ggplot(aes(beta, term, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free") +
+  scale_y_reordered()+ 
+  xlab(" ") +
+  theme(axis.text.x = element_text(angle = 60, vjust = 0.5, hjust=1))
+
+})
+
+
+
+
+  
+```
