@@ -18,7 +18,7 @@ library(tidytext, warn.conflicts = F, quietly = T)
 library(pdftools, warn.conflicts = F, quietly = T)
 library(purrrlyr, warn.conflicts = F, quietly = T)
 library(forcats, warn.conflicts = F, quietly = T)
-
+library(here, warn.conflicts = F, quietly = T)
 
 ```
 
@@ -33,14 +33,14 @@ n_top <- 150
 n_gramming <- 3
 
 ## drake task
-francia = pdf_text("data/francia.pdf") %>%
+francia = pdf_text(here("data","francia.pdf")) %>%
   readr::read_lines() %>%  
   str_squish() %>% 
   as_tibble() %>% 
   mutate(paese= forcats::as_factor("francia")) %>% 
   rename(text = value)
 
-germania = pdf_text("data/germania.pdf") %>%
+germania = pdf_text(here("data","germania.pdf")) %>%
   readr::read_lines() %>%
    str_squish() %>%  
   as_tibble() %>% 
@@ -113,20 +113,20 @@ inputPanel(
     
 start_words  = reactive({ c(input$prima_parola, input$seconda_parola) })
 
-trigrams <- germania %>%
+trigrammas <-  germania %>%
   unnest_tokens(trigram, text, token = "ngrams", n = n_gramming)
 
 ## top 150 trigrams using count and some regex magi
 pattern = reactive({  str_c("^", start_words(), " ", collapse = "|") })
 
-top_words <-  reactive({ trigrams %>%
+top_words <-  reactive({ trigrammas %>%
  dplyr::filter(str_detect(trigram, pattern())) %>%
  count(trigram, sort = TRUE) %>%
  slice(seq_len(n_top)) %>%
  pull(trigram)
 })
 
-trigrams <- reactive({ trigrams %>%
+trigrams <- reactive({ trigrammas %>%
  dplyr::filter(trigram %in% top_words()) })
 
 
@@ -213,9 +213,11 @@ third_word_she <- reactive({  nodes() %>%
 })
 
 # egdes between second and third column that starts with he
-egde2_he <- reactive({ egde_lines(dplyr::filter(trigrams(), 
-                             str_detect(trigram, paste0("^", start_words()[1], " "))), 
-            second_word_he(), third_word_he(), n = 50) %>%
+egde2_he <- reactive({ 
+  egde_lines(dplyr::filter(trigrams(),
+                           str_detect(trigram, paste0("^", start_words()[1], " "))),
+             second_word_he(),
+             third_word_he(), n = 50) %>%
  mutate(y = y + 0.05,
         from = start_words()[1],
         id = str_c(from, word_pair, sep = " ")) %>%
