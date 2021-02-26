@@ -43,3 +43,5 @@ Quindi procedo con la parola "pension" questa ha un numero di occorrenze pari a 
     2.  se estrai il pdf intero senza la soddivisione per pagine è posssibile mutare una colonna attribuendole una label se matcha un preciso regex. A questo punto è necessario fare tuning sul numero di argomenti con un modo "gamma"
 
         ------------------------------------------------------------------------
+
+Scostruisco due applicazioni intereattive senza framework per produzione sottostante per esplorare i dati ed avere un'idea dei plots.

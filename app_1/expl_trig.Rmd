@@ -24,11 +24,11 @@ library(here, warn.conflicts = F, quietly = T)
 
 
 
-### Select the **Input**
+Seleziona gli **Inputs**: le rispettive due parole delle cui vuoi indagare i trigrammi. L'ordine non conta. 
 
 ```{r app, echo=FALSE}
 # param set
-n_word <- 20
+n_word <- 50
 n_top <- 150
 n_gramming <- 3
 
@@ -47,6 +47,8 @@ germania = pdf_text(here("data","germania.pdf")) %>%
   mutate(paese= forcats::as_factor("germania")) %>% 
   rename(text = value)
 
+
+doppio_pdf = bind_rows(francia, germania)
 
 ## funs 
 ##
@@ -104,7 +106,11 @@ inputPanel(
   textInput("seconda_parola", "Seconda Parola:", "young"),
   
   selectInput("country", label = "Seleziona Paese", choices = country,
-              selected = country[2])
+              selected = country[2]), 
+  
+  radioButtons("stopw", "Stopwords: ",
+               c("Tedesche AKA inglesi" = "en",
+                 "Francesi" = "fr"))
   
   # downloadButton('downloadPlot', 'Download Plot')
   
@@ -113,20 +119,22 @@ inputPanel(
     
 start_words  = reactive({ c(input$prima_parola, input$seconda_parola) })
 
-trigrammas <-  germania %>%
-  unnest_tokens(trigram, text, token = "ngrams", n = n_gramming)
+trigrammas <- reactive({ doppio_pdf %>%
+    dplyr::filter(paese == input$country) %>% 
+    unnest_tokens(trigram, text, token = "ngrams", n = n_gramming)
+})
 
 ## top 150 trigrams using count and some regex magi
 pattern = reactive({  str_c("^", start_words(), " ", collapse = "|") })
 
-top_words <-  reactive({ trigrammas %>%
+top_words <-  reactive({ trigrammas() %>%
  dplyr::filter(str_detect(trigram, pattern())) %>%
  count(trigram, sort = TRUE) %>%
  slice(seq_len(n_top)) %>%
  pull(trigram)
 })
 
-trigrams <- reactive({ trigrammas %>%
+trigrams <- reactive({ trigrammas() %>%
  dplyr::filter(trigram %in% top_words()) })
 
 
@@ -139,7 +147,7 @@ nodes <- reactive({
         mutate(y = seq(from = n_word + 1, to = 0, 
                        length.out = n() + 2)[seq_len(n()) + 1],
                x = .x)) %>% 
-    anti_join(get_stopwords(language = "en"))
+    anti_join(get_stopwords(language = input$stopw))
 })
 
 
@@ -194,7 +202,7 @@ third_word_he <-  reactive({ nodes() %>%
    by = "word"
  ) %>%
  replace_na(list(n = 0)) %>%   
- anti_join(get_stopwords(language = "en"))
+ anti_join(get_stopwords(language = input$stopw))
 })
 
 ## That start with she (stopworded)
@@ -209,7 +217,7 @@ third_word_she <- reactive({  nodes() %>%
    by = "word"
  ) %>%
  replace_na(list(n = 0)) %>%
- anti_join(get_stopwords(language = "en")) 
+ anti_join(get_stopwords(language = input$stopw)) 
 })
 
 # egdes between second and third column that starts with he
@@ -233,6 +241,7 @@ egde2_she <- reactive({  egde_lines(dplyr::filter(trigrams(),
         id = str_c(from, word_pair, sep = " ")) %>%
  dplyr::filter(number > 0)
 })
+
 # All edges
 # 
 edges <- reactive({  bind_rows(egde1(), egde2_he(), egde2_she()) })

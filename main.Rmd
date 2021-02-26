@@ -208,7 +208,7 @@ library(stringr)
 
 pnrs = both_pnr %>%
   group_by(paese) %>%
-  mutate(line = row_number()) 
+  mutate(line = row_number()) %>% 
   ungroup()
 
 pnrs
@@ -230,16 +230,15 @@ tidy_pnrs
 
 ```{r clean}
 
-clen_pnrs <- tidy_pnrs %>%
-  anti_join(get_stopwords(language = "fr")) %>%  
+clean_pnrs <- tidy_pnrs %>%
+  anti_join(get_stopwords(language = "fr")) %>%
   anti_join(get_stopwords(language = "en"))
 
-  
-  
+clean_pnrs %>% filter(paese =="francia")
 ```
 
 
-```{r}
+```{r, include=FALSE}
 positive <- get_sentiments("bing") %>%
   filter(sentiment == "positive")
 
@@ -258,25 +257,57 @@ library(rfeel)
 bing = get_sentiments("bing")
 fr_sent = rfeel("polarity")
   
-pnrsentiment <- clen_pnrs %>%
-  inner_join(bing) %>%
-  inner_join(fr_sent) %>%
+
+## modo alternativo unico 
+# pnr_sentiments <- clean_pnrs %>%
+#   inner_join(bing) %>%
+#   inner_join(fr_sent, ) %>%
+#   count(paese, index = line %/% 80, sentiment) %>%
+#   spread(sentiment, n, fill = 0) %>%
+#   mutate(sentiment = positive - negative)
+# 
+
+
+fr_stp = francia %>% 
+  unnest_tokens(word, text) %>% 
+  anti_join(get_stopwords(language = "fr")) 
+  
+
+ger_stp = germania %>% 
+  unnest_tokens(word, text) %>% 
+  anti_join(get_stopwords(language = "en")) 
+
+fr_stp_sent = fr_stp %>% 
+  inner_join(fr_sent) %>% 
+  rename(sentiment=polarity)
+  
+ger_stp_sent = ger_stp %>% 
+  inner_join(bing) 
+
+cleaned_pnrs = bind_rows(fr_stp_sent,ger_stp_sent )
+
+cleaned_pnrs = cleaned_pnrs %>% 
+  mutate(line = row_number()) %>% 
   count(paese, index = line %/% 80, sentiment) %>%
   spread(sentiment, n, fill = 0) %>%
   mutate(sentiment = positive - negative)
+
+
+
 ```
 
 
 
 ```{r}
 
-ggplot(pnrsentiment, aes(index, sentiment, fill = paese)) +
+ggplot(cleaned_pnrs, aes(index, sentiment, fill = paese)) +
   geom_bar(stat = "identity", show.legend = FALSE) +
   facet_wrap(~paese, ncol = 2, scales = "free_x") +
   theme_oi2()
 
 logo = image_read("img/officine_italia.png")
 grid::grid.raster(logo, x = 0.09, y = 0, just = c('left', 'bottom'), width = unit(1.5, 'inches'))
+
 ```
 
 
@@ -308,11 +339,12 @@ bing_word_counts %>%
 ## Wordclouds b&n
 
 ```{r}
-
+library(wordcloud)
 clen_pnrs %>%
   filter(paese == "francia") %>% 
   count(word) %>%
   with(wordcloud(word, n, max.words = 100))
+
 ```
 
 ## Wordclouds colour 
@@ -690,3 +722,14 @@ beta_spread %>%
     y = ""
     )+ 
   theme_xaringan()
+
+```
+
+
+
+## word factor count: 
+
+
+
+
+
