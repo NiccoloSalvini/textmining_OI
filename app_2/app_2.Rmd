@@ -118,14 +118,13 @@ fr_sec_4 = pdftools::pdf_text("data/francia.pdf")[163:289] %>%
          sect = forcats::as_factor("Cohésion")) %>% ## qui ci sono i giovani come Jeunes
   rename(text = value)
 
-
-
 ger_doc = bind_rows(ger_sec_1, ger_sec_2, ger_sec_3, ger_sec_4,ger_sec_5, ger_sec_6)
 fr_doc = bind_rows(fr_sec_1, fr_sec_2, fr_sec_3, fr_sec_4)
 
+doppio_pdf = bind_rows(fr_doc, ger_doc)
 country = c("francia", "germania")
 
-doppio_pdf = bind_rows(fr_doc, ger_doc)
+
 
 inputPanel(
   
@@ -138,26 +137,36 @@ inputPanel(
 
 
 ger_by_sec_word = reactive({  
-  doppio_pdf %>%
-  dplyr::filter(paese == "germania") %>% 
-    unnest_tokens(word, text) %>%
-    anti_join(get_stopwords(language = "en")) %>%
-    anti_join(get_stopwords(language = "fr")) %>%
-    count(sect, word, sort = TRUE)
+
+  # doppio_pdf %>%
+  #   dplyr::filter(paese == input$country) %>%
+
+  if(identical(input$country,"germania")){
+    ger_doc %>%
+      unnest_tokens(word, text) %>%
+      anti_join(get_stopwords(language = "en")) %>%
+      count(sect, word,paese, sort = TRUE)  
+    
+  } else {
+    fr_doc %>%
+      unnest_tokens(word, text) %>%
+      anti_join(get_stopwords(language = "fr")) %>%
+      count(sect, word,paese, sort = TRUE)  
+  }
+  
 })
 
 
-dtm_ger = reactive({  
-  ger_by_sec_word() %>% 
-  cast_dtm(sect, word, n)
+dtm_ger = reactive({
+  ger_by_sec_word() %>%
+    cast_dtm(sect, word, n)
 })
-
 
 
 ## fitting LDA model
 
 ger_lda <-  reactive({  
-  LDA(dtm_ger(), k = input$topics, control = list(seed = 2021))
+  LDA(dtm_ger(), k = 5, control = list(seed = 2021))
 })
 
 ger_lda_tidy <- reactive({ 

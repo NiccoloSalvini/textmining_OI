@@ -81,8 +81,8 @@ Le risorse che investiamo oggi non possono mancare di un progetto **strategico**
 ### Applicazioni Minimali per esploare
 
 - app 1: esplorare i **Trigrammi**: [deploy](https://niccolosalvini.shinyapps.io/app_2/)
-- app 3: netowork di **Bigrammi**: [deploy](https://niccolosalvini.shinyapps.io/app_3/)
-<!-- - app 2: netowork di **Bigrammi**: [deploy](https://niccolosalvini.shinyapps.io/app_1/) -->
+- app 2: esplorare i **Topics**: [deploy](https://niccolosalvini.shinyapps.io/app_3/)
+- app 3: network di **Bigrammi**: [deploy](https://niccolosalvini.shinyapps.io/app_3/)
 
 
 

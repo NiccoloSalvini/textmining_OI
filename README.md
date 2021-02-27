@@ -57,9 +57,10 @@ l’Europa del futuro
 
 -   app 1: esplorare i **Trigrammi**:
     [deploy](https://niccolosalvini.shinyapps.io/app_2/)
--   app 3: netowork di **Bigrammi**:
+-   app 2: esplorare i **Topics**:
     [deploy](https://niccolosalvini.shinyapps.io/app_3/)
-    <!-- - app 2: netowork di **Bigrammi**: [deploy](https://niccolosalvini.shinyapps.io/app_1/) -->
+-   app 3: network di **Bigrammi**:
+    [deploy](https://niccolosalvini.shinyapps.io/app_3/)
 
 ## Uso:
 
