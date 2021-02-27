@@ -1,0 +1,235 @@
+---
+title: " Network di Bigrammi (Ger - Fra)"
+runtime: shiny
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, 
+                      message = FALSE, 
+                      warning = FALSE)
+
+library(here, warn.conflicts = F, quietly = T)
+library(tidyverse, warn.conflicts = F, quietly = T)
+library(glue, warn.conflicts = F, quietly = T)
+library(shiny, warn.conflicts = F, quietly = T)
+library(tidytext, warn.conflicts = F, quietly = T)
+library(pdftools, warn.conflicts = F, quietly = T)
+library(purrrlyr, warn.conflicts = F, quietly = T)
+library(forcats, warn.conflicts = F, quietly = T)
+library(topicmodels, warn.conflicts = F, quietly = T)
+library(htmlwidgets, warn.conflicts = F, quietly = T)
+library(ggraph, warn.conflicts = F, quietly = T)
+library(igraph, warn.conflicts = F, quietly = T)
+library(reactable, warn.conflicts = F, quietly = T)
+
+
+
+
+francia = pdf_text("data/francia.pdf") %>%
+  readr::read_lines() %>%  
+  str_squish() %>% 
+  as_tibble() %>% 
+  mutate(paese= forcats::as_factor("francia")) %>% 
+  rename(text = value)
+
+germania = pdf_text("data/germania.pdf") %>%
+  readr::read_lines() %>%
+   str_squish() %>%  
+  as_tibble() %>% 
+  mutate(paese= forcats::as_factor("germania")) %>% 
+  rename(text = value)
+
+both_pnr = bind_rows(francia,germania)
+```
+
+
+**GOAL**: Vediamo meglio le relazioni tra Bigrammi, magari vengono fuori dei clusters di parole che ci aiutano a vedere dei possibili topics. Così quando andiamo a guardare le relazioi tra trigrammi sappiamo a cosa sono colegati i numeri.
+
+TO-DO list:
+
+- 
+
+```{r bigraminsp}
+
+
+ger_bigram =  reactive({  germania %>%
+  unnest_tokens(bigram, text, token = "ngrams", n = 2)
+})
+
+
+bigrams_separated_ger <-reactive({   ger_bigram %>%
+  separate(bigram, c("word1", "word2"), sep = " ")
+})
+
+bigrams_filtered <-reactive({   bigrams_separated_ger %>%
+  filter(!word1 %in% stop_words$word) %>%
+  filter(!word2 %in% stop_words$word)
+  
+})
+
+# new bigram counts:
+bigram_counts <- reactive({  
+  bigrams_filtered %>% 
+  count(word1, word2, sort = TRUE)
+
+})
+
+bigrams_united <- reactive({  
+  bigrams_filtered %>%
+  unite(bigram, word1, word2, sep = " ")
+  
+})
+
+
+set.seed(2021)
+
+bigram_graph <- reactive({   
+  bigram_counts %>%
+  filter(n > 5) %>%
+  graph_from_data_frame()
+
+})
+# 
+# DT::renderDataTable({
+#     DT::datatable(bigrams_united(),
+#                   rownames = FALSE,
+#                   options = list(
+#     lengthChange = FALSE,
+#     initComplete = JS(
+#       "function(settings, json) {",
+#       "$(this.api().table().header()).css({'background-color': '#42f', 'color': '#fff'});",
+#       "}"),
+#     autowidth = TRUE,
+#     language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Italian.json'),
+#     columnDefs = list(list(width = '70%', targets = 1))
+#     )
+#     ) %>% 
+#     DT::formatPercentage('beta', 2)  %>% 
+#     DT::formatStyle('beta', fontWeight = DT::styleInterval(1, c('normal', 'bold'))) 
+# })
+
+
+
+
+
+renderReactable({
+      
+  bigrams_united() %>% 
+  head(30) %>% 
+    reactable(searchable = TRUE,
+            minRows = 8,
+            theme = reactableTheme(
+    borderColor = "#1c5253",
+    stripedColor = "#1c5253",
+    highlightColor = "#1c5253",
+    cellPadding = "8px 12px",
+    style = list(fontFamily = "-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif"),
+    searchInputStyle = list(width = "100%")
+  ))
+  })
+
+renderPlot({
+    
+  
+  a <- grid::arrow(type = "closed", length = unit(.15, "inches"))
+  
+  ggraph(bigram_graph, layout = "fr") +
+    geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
+                   arrow = a, end_cap = circle(.07, 'inches')) +
+    geom_node_point(color = "lightblue", size = 5) +
+    geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
+    theme_void()
+# 
+#     theme(axis.text.x = element_text(angle = 25, vjust = 0.5, hjust=1),
+#           plot.background = ggplot2::element_blank(),
+#           panel.background = ggplot2::element_blank()
+#           )
+
+})
+
+```
+
+
+## network di bigrammi 
+
+```{r bigramsnet}
+
+
+library(ggraph, warn.conflicts = F, quietly = T)
+library(igraph, warn.conflicts = F, quietly = T)
+
+
+austen_bigrams <- austen_books() %>%
+  unnest_tokens(bigram, text, token = "ngrams", n = 2)
+
+bigrams_separated <- austen_bigrams %>%
+  separate(bigram, c("word1", "word2"), sep = " ")
+
+bigrams_filtered <- bigrams_separated %>%
+  filter(!word1 %in% stop_words$word) %>%
+  filter(!word2 %in% stop_words$word)
+
+# new bigram counts:
+bigram_counts <- bigrams_filtered %>% 
+  count(word1, word2, sort = TRUE)
+
+bigrams_united <- bigrams_filtered %>%
+  unite(bigram, word1, word2, sep = " ")
+
+library(reactable)
+
+bigrams_united %>% 
+  head(30) %>% 
+    reactable(searchable = TRUE,
+            minRows = 8,
+            theme = reactableTheme(
+    borderColor = "#1c5253",
+    stripedColor = "#1c5253",
+    highlightColor = "#1c5253",
+    cellPadding = "8px 12px",
+    style = list(fontFamily = "-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif"),
+    searchInputStyle = list(width = "100%")
+  ))
+
+#########################
+#########################
+
+ger_bigram = germania %>%
+  unnest_tokens(bigram, text, token = "ngrams", n = 2)
+
+
+bigrams_separated_ger <- ger_bigram %>%
+  separate(bigram, c("word1", "word2"), sep = " ")
+
+bigrams_filtered <- bigrams_separated_ger %>%
+  filter(!word1 %in% stop_words$word) %>%
+  filter(!word2 %in% stop_words$word)
+
+# new bigram counts:
+bigram_counts <- bigrams_filtered %>% 
+  count(word1, word2, sort = TRUE)
+set.seed(2021)
+
+bigram_graph <- bigram_counts %>%
+  filter(n > 5) %>%
+  graph_from_data_frame()
+
+
+a <- grid::arrow(type = "closed", length = unit(.15, "inches"))
+
+ggraph(bigram_graph, layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
+                 arrow = a, end_cap = circle(.07, 'inches')) +
+  geom_node_point(color = "lightblue", size = 5) +
+  geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
+  theme_void()
+
+
+## approccio funzionale al network di bigrammi 
+## 
+
+
+
+
+```
