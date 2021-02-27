@@ -804,39 +804,7 @@ beta_spread %>%
 library(ggraph, warn.conflicts = F, quietly = T)
 library(igraph, warn.conflicts = F, quietly = T)
 
-
-austen_bigrams <- austen_books() %>%
-  unnest_tokens(bigram, text, token = "ngrams", n = 2)
-
-bigrams_separated <- austen_bigrams %>%
-  separate(bigram, c("word1", "word2"), sep = " ")
-
-bigrams_filtered <- bigrams_separated %>%
-  filter(!word1 %in% stop_words$word) %>%
-  filter(!word2 %in% stop_words$word)
-
-# new bigram counts:
-bigram_counts <- bigrams_filtered %>% 
-  count(word1, word2, sort = TRUE)
-
-bigrams_united <- bigrams_filtered %>%
-  unite(bigram, word1, word2, sep = " ")
-
-bigrams_united %>% 
-  head(30) %>% 
-    reactable(searchable = TRUE,
-            minRows = 8,
-            theme = reactableTheme(
-    borderColor = "#1c5253",
-    stripedColor = "#1c5253",
-    highlightColor = "#1c5253",
-    cellPadding = "8px 12px",
-    style = list(fontFamily = "-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif"),
-    searchInputStyle = list(width = "100%")
-  ))
-
-#########################
-#########################
+arreter_mots = get_stopwords("fr") 
 
 ger_bigram = germania %>%
   unnest_tokens(bigram, text, token = "ngrams", n = 2)
@@ -845,9 +813,12 @@ ger_bigram = germania %>%
 bigrams_separated_ger <- ger_bigram %>%
   separate(bigram, c("word1", "word2"), sep = " ")
 
+## qui li filtri
 bigrams_filtered <- bigrams_separated_ger %>%
   filter(!word1 %in% stop_words$word) %>%
-  filter(!word2 %in% stop_words$word)
+  filter(!word2 %in% stop_words$word) %>% 
+  filter(!word1 %in% arreter_mots$word) %>%
+  filter(!word2 %in% arreter_mots$word)
 
 # new bigram counts:
 bigram_counts <- bigrams_filtered %>% 
