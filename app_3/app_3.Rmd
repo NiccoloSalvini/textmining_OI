@@ -9,7 +9,6 @@ knitr::opts_chunk$set(echo = FALSE,
                       message = FALSE, 
                       warning = FALSE)
 
-library(here, warn.conflicts = F, quietly = T)
 library(tidyverse, warn.conflicts = F, quietly = T)
 library(glue, warn.conflicts = F, quietly = T)
 library(shiny, warn.conflicts = F, quietly = T)
@@ -22,18 +21,19 @@ library(htmlwidgets, warn.conflicts = F, quietly = T)
 library(ggraph, warn.conflicts = F, quietly = T)
 library(igraph, warn.conflicts = F, quietly = T)
 library(reactable, warn.conflicts = F, quietly = T)
+library(stopwords, warn.conflicts = F, quietly = T)
 
 
 
 ## drake task
-francia = pdf_text(here("data","francia.pdf")) %>%
+francia = pdf_text("data/francia.pdf") %>%
   readr::read_lines() %>%  
   str_squish() %>% 
   as_tibble() %>% 
   mutate(paese= forcats::as_factor("francia")) %>% 
   rename(text = value)
 
-germania = pdf_text(here("data","germania.pdf")) %>%
+germania = pdf_text("data/germania.pdf") %>%
   readr::read_lines() %>%
    str_squish() %>%  
   as_tibble() %>% 

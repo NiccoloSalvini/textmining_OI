@@ -9,7 +9,6 @@ knitr::opts_chunk$set(echo = FALSE,
                       message = FALSE, 
                       warning = FALSE)
 
-library(here, warn.conflicts = F, quietly = T)
 library(tidyverse, warn.conflicts = F, quietly = T)
 library(glue, warn.conflicts = F, quietly = T)
 library(shiny, warn.conflicts = F, quietly = T)
@@ -19,6 +18,8 @@ library(purrrlyr, warn.conflicts = F, quietly = T)
 library(forcats, warn.conflicts = F, quietly = T)
 library(topicmodels, warn.conflicts = F, quietly = T)
 library(htmlwidgets, warn.conflicts = F, quietly = T)
+library(DT, warn.conflicts = F, quietly = T)
+library(stopwords, warn.conflicts = F, quietly = T)
 
 ```
 
@@ -27,9 +28,9 @@ library(htmlwidgets, warn.conflicts = F, quietly = T)
 
 ```{r topicmining}
 
-## labelling manuale 
+## labelling manuale per germania
 
-ger_sec_1 = pdftools::pdf_text(here("data","germania.pdf"))[7:9] %>%  
+ger_sec_1 = pdftools::pdf_text("data/germania.pdf")[7:9] %>%  
   readr::read_lines() %>% 
   str_squish() %>% 
   as_tibble() %>% 
@@ -37,7 +38,7 @@ ger_sec_1 = pdftools::pdf_text(here("data","germania.pdf"))[7:9] %>%
          sect = forcats::as_factor("Summary")) %>% 
   rename(text = value)
 
-ger_sec_2 = pdftools::pdf_text(here("data", "germania.pdf"))[11] %>%  
+ger_sec_2 = pdftools::pdf_text("data/germania.pdf")[11] %>%  
   readr::read_lines() %>% 
   str_squish() %>% 
   as_tibble() %>% 
@@ -45,7 +46,7 @@ ger_sec_2 = pdftools::pdf_text(here("data", "germania.pdf"))[11] %>%
          sect = forcats::as_factor("Financial framework")) %>% 
   rename(text = value)
 
-ger_sec_3 = pdftools::pdf_text(here("data", "germania.pdf"))[13:15] %>%  
+ger_sec_3 = pdftools::pdf_text("data/germania.pdf")[13:15] %>%  
   readr::read_lines() %>% 
   str_squish() %>% 
   as_tibble() %>% 
@@ -53,7 +54,7 @@ ger_sec_3 = pdftools::pdf_text(here("data", "germania.pdf"))[13:15] %>%
          sect = forcats::as_factor("Linking the plan with the European Semester")) %>% 
   rename(text = value)
 
-ger_sec_4 = pdftools::pdf_text(here("data","germania.pdf"))[17:19] %>%  
+ger_sec_4 = pdftools::pdf_text("data/germania.pdf")[17:19] %>%  
   readr::read_lines() %>% 
   str_squish() %>% 
   as_tibble() %>% 
@@ -61,7 +62,7 @@ ger_sec_4 = pdftools::pdf_text(here("data","germania.pdf"))[17:19] %>%
          sect = forcats::as_factor("Description of investment measures and reforms")) %>% 
   rename(text = value)
 
-ger_sec_5 = pdftools::pdf_text(here("data","germania.pdf"))[21:41] %>%  
+ger_sec_5 = pdftools::pdf_text("data/germania.pdf")[21:41] %>%  
   readr::read_lines() %>% 
   str_squish() %>% 
   as_tibble() %>% 
@@ -69,7 +70,7 @@ ger_sec_5 = pdftools::pdf_text(here("data","germania.pdf"))[21:41] %>%
          sect = forcats::as_factor("Details of focus areas for measures and components")) %>% 
   rename(text = value)
 
-ger_sec_6 = pdftools::pdf_text(here("data","germania.pdf"))[43] %>%  
+ger_sec_6 = pdftools::pdf_text("data/germania.pdf")[43] %>%  
   readr::read_lines() %>% 
   str_squish() %>% 
   as_tibble() %>% 
@@ -78,32 +79,85 @@ ger_sec_6 = pdftools::pdf_text(here("data","germania.pdf"))[43] %>%
   rename(text = value)
 
 
-ger_doc = bind_rows(ger_sec_1, ger_sec_2, ger_sec_3, ger_sec_4, ger_sec_5, ger_sec_6)
 
 
+##### labelling manuale per francia
+##### qui per macro-aree
+
+
+fr_sec_1 = pdftools::pdf_text("data/francia.pdf")[3:4] %>%  
+  readr::read_lines() %>% 
+  str_squish() %>% 
+  as_tibble() %>% 
+  mutate(paese= forcats::as_factor("francia"),
+         sect = forcats::as_factor("introduction")) %>% 
+  rename(text = value)
+
+
+fr_sec_2 = pdftools::pdf_text("data/francia.pdf")[9:116] %>%  
+  readr::read_lines() %>% 
+  str_squish() %>% 
+  as_tibble() %>% 
+  mutate(paese= forcats::as_factor("francia"),
+         sect = forcats::as_factor("Écologie")) %>% 
+  rename(text = value)
+
+fr_sec_3 = pdftools::pdf_text("data/francia.pdf")[117:162] %>%  
+  readr::read_lines() %>% 
+  str_squish() %>% 
+  as_tibble() %>% 
+  mutate(paese= forcats::as_factor("francia"),
+         sect = forcats::as_factor("Compétitivité")) %>% 
+  rename(text = value)
+
+fr_sec_4 = pdftools::pdf_text("data/francia.pdf")[163:289] %>%  
+  readr::read_lines() %>% 
+  str_squish() %>% 
+  as_tibble() %>% 
+  mutate(paese= forcats::as_factor("francia"),
+         sect = forcats::as_factor("Cohésion")) %>% ## qui ci sono i giovani come Jeunes
+  rename(text = value)
+
+
+
+ger_doc = bind_rows(ger_sec_1, ger_sec_2, ger_sec_3, ger_sec_4,ger_sec_5, ger_sec_6)
+fr_doc = bind_rows(fr_sec_1, fr_sec_2, fr_sec_3, fr_sec_4)
+
+country = c("francia", "germania")
+
+doppio_pdf = bind_rows(fr_doc, ger_doc)
 
 inputPanel(
   
   numericInput("topics", "N° of Topics (k)", 5, min = 1, max = 20),
-  downloadButton('downloadPlot', 'Download Plot')
+  
+  selectInput("country", label = "Seleziona Paese", choices = country,
+              selected = country[2])
   
 )
 
 
-ger_by_sec_word = ger_doc %>% 
-  unnest_tokens(word, text) %>% 
-  anti_join(get_stopwords(language = "en")) %>% 
-  count(sect, word, sort = TRUE)
+ger_by_sec_word = reactive({  
+  doppio_pdf %>%
+  dplyr::filter(paese == "germania") %>% 
+    unnest_tokens(word, text) %>%
+    anti_join(get_stopwords(language = "en")) %>%
+    anti_join(get_stopwords(language = "fr")) %>%
+    count(sect, word, sort = TRUE)
+})
 
-dtm_ger = ger_by_sec_word %>% 
+
+dtm_ger = reactive({  
+  ger_by_sec_word() %>% 
   cast_dtm(sect, word, n)
+})
 
 
 
 ## fitting LDA model
 
 ger_lda <-  reactive({  
-  LDA(dtm_ger, k = input$topics, control = list(seed = 2021))
+  LDA(dtm_ger(), k = input$topics, control = list(seed = 2021))
 })
 
 ger_lda_tidy <- reactive({ 
@@ -117,8 +171,8 @@ top_terms <- reactive({  ger_lda_tidy() %>%
   arrange(topic, -beta)
 })
 
-DT::renderDataTable({
-    DT::datatable(top_terms(),
+renderDataTable({
+    datatable(top_terms(),
                   rownames = FALSE,
                   options = list(
     lengthChange = FALSE,
@@ -131,8 +185,8 @@ DT::renderDataTable({
     columnDefs = list(list(width = '70%', targets = 1))
     )
     ) %>% 
-    DT::formatPercentage('beta', 2)  %>% 
-    DT::formatStyle('beta', fontWeight = DT::styleInterval(1, c('normal', 'bold'))) 
+    formatPercentage('beta', 2)  %>% 
+    formatStyle('beta', fontWeight = styleInterval(1, c('normal', 'bold'))) 
 })
 
 
@@ -145,6 +199,7 @@ renderPlot({
     facet_wrap(~ topic, scales = "free") +
     scale_y_reordered()+ 
     xlab(" ") +
+    ylab(" ") +
     theme(axis.text.x = element_text(angle = 25, vjust = 0.5, hjust=1),
           plot.background = ggplot2::element_blank(),
           panel.background = ggplot2::element_blank()

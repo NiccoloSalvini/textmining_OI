@@ -53,6 +53,14 @@ livello nazionale ma **europeo**. Lo vogliamo fare chiedendo ascolto e
 confronto, per contribuire a interrogarci su come disegnare l’Italia e
 l’Europa del futuro
 
+### Applicazioni Minimali per esploare
+
+-   app 1: esplorare i **Trigrammi**:
+    [deploy](https://niccolosalvini.shinyapps.io/app_2/)
+-   app 3: netowork di **Bigrammi**:
+    [deploy](https://niccolosalvini.shinyapps.io/app_3/)
+    <!-- - app 2: netowork di **Bigrammi**: [deploy](https://niccolosalvini.shinyapps.io/app_1/) -->
+
 ## Uso:
 
 Clona la repo in locale col comando
@@ -69,8 +77,8 @@ successivamente compila il documento `main.R` col comando **knit**
 -   [x] build **wordclouds**
 -   [ ] obtain all **PNRs**
 -   [x] build minimal shiny app to explore trigram
--   [x] build minimal topic modelling app
--   [ ] build minimal network eploration app
+-   [x] build minimal topic modelling app (failed)
+-   [x] build minimal network eploration app
 
 ## Licenza:
 

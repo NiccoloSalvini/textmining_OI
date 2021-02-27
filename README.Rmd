@@ -78,6 +78,14 @@ Siamo **Under 30** che vogliono far sentire la propria voce forte e chiara, lo a
 Le risorse che investiamo oggi non possono mancare di un progetto **strategico** **condiviso** e di una visione d’insieme, non solo a livello nazionale ma **europeo**. Lo vogliamo fare chiedendo ascolto e confronto, per contribuire a interrogarci su come disegnare l’Italia e l’Europa del futuro
 
 
+### Applicazioni Minimali per esploare
+
+- app 1: esplorare i **Trigrammi**: [deploy](https://niccolosalvini.shinyapps.io/app_2/)
+- app 3: netowork di **Bigrammi**: [deploy](https://niccolosalvini.shinyapps.io/app_3/)
+<!-- - app 2: netowork di **Bigrammi**: [deploy](https://niccolosalvini.shinyapps.io/app_1/) -->
+
+
+
 ## Uso:
 
 Clona la repo in locale col comando
@@ -93,8 +101,8 @@ Apri il file di progetto nella cartella clonata `textmining_OI.Rproj`, successiv
 - [x] build **wordclouds**
 - [ ] obtain all **PNRs**
 - [x] build minimal shiny app to explore trigram
-- [x] build minimal topic modelling app
-- [ ] build minimal network eploration app
+- [x] build minimal topic modelling app (failed)
+- [x] build minimal network eploration app
 
 
 
