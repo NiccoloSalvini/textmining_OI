@@ -29,11 +29,11 @@ if (!require("pacman")) install.packages("pacman")
 
 pacman::p_load(tidyverse, tidytext, wordcloud, reshape2, scales, magick, ggplot2, latex2exp, pdftools, purrrlyr)
 
-## base_color = "#1c5253",
-## header_font_google = google_font("Rubik"),
-## text_font_google   = google_font("Rubik", "300", "300i")
-## code_font_google   = google_font("Fira Mono"),
-
+# ## base_color = "#1c5253",
+# header_font_google = google_font("Rubik"),
+# text_font_google   = google_font("Rubik", "300", "300i")
+# code_font_google   = google_font("Fira Mono"),
+# 
 
 ```
 
@@ -288,7 +288,7 @@ cleaned_pnrs = bind_rows(fr_stp_sent,ger_stp_sent )
 
 cleaned_pnrs = cleaned_pnrs %>% 
   mutate(line = row_number()) %>% 
-  count(paese, index = line %/% 80, sentiment) %>%
+  count(paese, index = line %/% 30, sentiment) %>%
   spread(sentiment, n, fill = 0) %>%
   mutate(sentiment = positive - negative)
 
@@ -299,32 +299,53 @@ cleaned_pnrs = cleaned_pnrs %>%
 
 
 ```{r}
+library(magick, warn.conflicts = F, quietly = T)
+# library(extrafont, warn.conflicts = F, quietly = T)
+# extrafont::font_import()
+# extrafont::loadfonts()
+
+logo = image_read("img/officine_italia.png")
+grid::grid.raster(logo, x = 0.09, y = 0, just = c('left', 'bottom'), width = unit(1.5, 'inches'))
+
 
 ggplot(cleaned_pnrs, aes(index, sentiment, fill = paese)) +
   geom_bar(stat = "identity", show.legend = FALSE) +
   facet_wrap(~paese, ncol = 2, scales = "free_x") +
   theme_oi2()
 
-logo = image_read("img/officine_italia.png")
-grid::grid.raster(logo, x = 0.09, y = 0, just = c('left', 'bottom'), width = unit(1.5, 'inches'))
-
+ggsave("figures/sent_per_doc.pdf", dpi = "retina")
 ```
 
 
 ## Most common positive and negative words
 
 
-```{r assCount}
-bing_word_counts <- tidy_books %>%
-  inner_join(bing) %>%
-  count(word, sentiment, sort = TRUE)
+```{r assocCount}
+cleaned_pnrs = bind_rows(fr_stp_sent,ger_stp_sent )
+
+bing_word_counts <- cleaned_pnrs %>%
+  count(word, sentiment, paese,sort = TRUE)
 
 bing_word_counts
 ```
 
 
 ```{r, fig.cap="Each contribution to Sentiment per word facetted for Negative and Positive"}
+## for german
 bing_word_counts %>%
+  filter(paese =="germania") %>% 
+  filter(n > 15) %>% ## qui tiri un po' giù perchè ci sono meno parole
+  mutate(n = ifelse(sentiment == "negative", -n, n)) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(word, n, fill = sentiment)) +
+  geom_col() +
+  coord_flip() +
+  labs(y = "Contribution to sentiment")+
+  theme_oi2()
+
+## for france
+bing_word_counts %>%
+  filter(paese =="francia") %>% 
   filter(n > 150) %>%
   mutate(n = ifelse(sentiment == "negative", -n, n)) %>%
   mutate(word = reorder(word, n)) %>%
@@ -334,32 +355,83 @@ bing_word_counts %>%
   labs(y = "Contribution to sentiment")+
   theme_oi2()
 
+
 ```
 
 ## Wordclouds b&n
 
-```{r}
-library(wordcloud)
-clen_pnrs %>%
+```{r wordcloudb&n}
+library(wordcloud, warn.conflicts = F, quietly = T)
+## B&W wordcloud for francia
+cleaned_pnrs %>%
   filter(paese == "francia") %>% 
   count(word) %>%
   with(wordcloud(word, n, max.words = 100))
+
+## B&W wordcloud for germania
+cleaned_pnrs %>%
+  filter(paese == "germania") %>% 
+  count(word) %>%
+  with(wordcloud(word, n, max.words = 200))
 
 ```
 
 ## Wordclouds colour 
 
-```{r wordcloudGER}
+```{r wordcloudcolour}
 
-
-clen_pnrs %>% 
+## colored wordcloud for germania 
+cleaned_pnrs %>% 
   filter(paese == "germania") %>% 
   inner_join(bing) %>%
   count(word, sentiment, sort = TRUE) %>%
   acast(word ~ sentiment, value.var = "n", fill = 0) %>%
   comparison.cloud(colors = c("#F8766D", "#00BFC4"),
+                   max.words = 150)
+
+## colored wordcloud for francia
+cleaned_pnrs %>% 
+  filter(paese == "francia") %>% 
+  inner_join(fr_sent) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  acast(word ~ sentiment, value.var = "n", fill = 0) %>%
+  comparison.cloud(colors = c("#F8766D", "#00BFC4"),
                    max.words = 100)
-ggsave("figures/wdc_ger", dpi = "retina")
+
+
+## problemi col save perchè non è stack ggplot 
+## e in più problemi di import dei fonts
+## 
+
+## Tento l'approccio funzionale 
+## 
+
+gen_wordcloud_sent = function(cleaned_docs, country, max.words) {
+  
+  stopifnot(is.numeric(max.words))
+  if(identical(names(cleaned_pnrs),c("paese","word","sentiment"))){
+    invisible()
+  } else {
+    message("Error: colums 'paese','word','sentiment' are either missing 
+            in esamble or are not named correctly")
+  }
+  
+  cleaned_docs %>%
+    filter(paese == country) %>% 
+    inner_join(bing) %>%
+    count(word, sentiment, sort = TRUE) %>%
+    acast(word ~ sentiment, value.var = "n", fill = 0) %>%
+    comparison.cloud(colors = c("#F8766D", "#00BFC4"),
+                     max.words =  as.numeric(max.words))
+
+    
+}
+
+gen_wordcloud_sent(cleaned_docs = cleaned_pnrs, country = "germania", max.words = 100)
+
+identical(names(cleaned_pnrs),c("paese","word","sentiment"))
+
+
 ```
 
 
