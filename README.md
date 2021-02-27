@@ -56,9 +56,9 @@ l’Europa del futuro
 ### Applicazioni Minimali per esploare
 
 -   app 1: esplorare i **Trigrammi**:
-    [deploy](https://niccolosalvini.shinyapps.io/app_2/)
+    [deploy](https://niccolosalvini.shinyapps.io/app_1/)
 -   app 2: esplorare i **Topics**:
-    [deploy](https://niccolosalvini.shinyapps.io/app_3/)
+    [deploy](https://niccolosalvini.shinyapps.io/app_2/)
 -   app 3: network di **Bigrammi**:
     [deploy](https://niccolosalvini.shinyapps.io/app_3/)
 
@@ -80,6 +80,7 @@ successivamente compila il documento `main.R` col comando **knit**
 -   [x] build minimal shiny app to explore trigram
 -   [x] build minimal topic modelling app (failed)
 -   [x] build minimal network eploration app
+-   [ ] style the CSS for mobile usage and for more confortable usage
 
 ## Licenza:
 

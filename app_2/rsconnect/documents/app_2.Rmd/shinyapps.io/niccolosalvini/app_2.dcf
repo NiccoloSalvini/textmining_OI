@@ -5,8 +5,8 @@ account: niccolosalvini
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 3707841
-bundleId: 4279404
+bundleId: 4279565
 url: https://niccolosalvini.shinyapps.io/app_2/
-when: 1614449164.64868
+when: 1614453954.23255
 asMultiple: FALSE
 asStatic: FALSE

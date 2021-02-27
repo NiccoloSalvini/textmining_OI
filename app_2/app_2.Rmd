@@ -20,9 +20,13 @@ library(topicmodels, warn.conflicts = F, quietly = T)
 library(htmlwidgets, warn.conflicts = F, quietly = T)
 library(DT, warn.conflicts = F, quietly = T)
 library(stopwords, warn.conflicts = F, quietly = T)
+library(reshape2, warn.conflicts = F, quietly = T)
+
 
 ```
 
+<img src="img/officine_italia.png" align="right" height="60" />
+_last build date_: `r format(Sys.Date(), "%d %B, %Y")`
 
 **GOAL**: Qual è il numero giusto di _k_ e quali sono i topics associati ad ogni _k_ 
 

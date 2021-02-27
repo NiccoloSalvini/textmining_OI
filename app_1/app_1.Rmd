@@ -23,7 +23,9 @@ library(stopwords, warn.conflicts = F, quietly = T)
 
 ```
 
+<img src="img/officine_italia.png" align="right" height="60" />
 
+_latest build date_: `r format(Sys.Date(), "%d %B, %Y")`
 
 Seleziona gli **Inputs**: le rispettive due parole delle cui vuoi indagare i trigrammi. L'ordine non conta. 
 
@@ -244,11 +246,8 @@ egde2_she <- reactive({  egde_lines(dplyr::filter(trigrams(),
 })
 
 # All edges
-# 
+
 edges <- reactive({  bind_rows(egde1(), egde2_he(), egde2_she()) })
-
-# })
-
 
 
 renderPlot({
