@@ -427,23 +427,9 @@ gen_wordcloud_sent = function(cleaned_docs, country, max.words) {
     
 }
 
-gen_wordcloud_sent(cleaned_docs = cleaned_pnrs, country = "germania", max.words = 100)
-
-identical(names(cleaned_pnrs),c("paese","word","sentiment"))
+# gen_wordcloud_sent(cleaned_docs = cleaned_pnrs, country = "germania", max.words = 100)
 
 
-```
-
-
-```{r wordcloudFR}
-clen_pnrs %>% 
-  filter(paese == "francia") %>% 
-  inner_join(fr_sent) %>%
-  count(word, polarity, sort = TRUE) %>%
-  acast(word ~ polarity, value.var = "n", fill = 0) %>%
-  comparison.cloud(colors = c("#F8766D", "#5EF1F1"),
-                   max.words = 100)
-ggsave("figures/wdc_fra", dpi = "retina")
 ```
 
 
@@ -650,7 +636,7 @@ ggsave("figures/trigrams_ger.pdf", dpi = "retina")
 goal: quali sono i maggiori temi per sezione (divisione del docuemento)
 
 ```{r topicmodels}
-library(topicmodels)
+library(topicmodels, warn.conflicts = F, quietly = T)
 
 ## Secondo metodo non supervisionato 
 ## 
@@ -738,7 +724,7 @@ ger_by_sec_word = ger_doc %>%
 dtm_ger = ger_by_sec_word %>% 
   cast_dtm(sect, word, n)
 
-library(glue)
+library(glue, warn.conflicts = F, quietly = T)
 
 ## fitting model
 ger_lda <- LDA(dtm_ger, k = 7, control = list(seed = 2021))
@@ -765,10 +751,17 @@ top_terms %>%
   facet_wrap(~ topic, scales = "free") +
   scale_y_reordered()+ 
   xlab(" ") +
+  ylab(" ") +
   theme(axis.text.x = element_text(angle = 25, vjust = 0.5, hjust=1),
         plot.background = ggplot2::element_blank(),
         panel.background = ggplot2::element_blank())
-  
+
+
+## per un tema diverso 
+# theme_oi2( axis.text.x = element_text(angle = 25, vjust = 0.5, hjust=1)) +
+# ylab(" ")
+# 
+
 ```
 
 
@@ -776,12 +769,17 @@ top_terms %>%
 
 Puoi anche andare a vedere le differenze maggiori tra score di probabilità, chiamala $\beta$, tra le parole e andarle a comparare nuovamente i due topics. In questa maniera filtri sole le parole meno comuni, quindi quelle potenzialmente più pregne di significato.
 
-```{r oddsratio}
-beta_spread <- ap_topics %>%
+```{r betastopic, include=F}
+
+## under development 
+## 
+
+beta_spread <- top_terms %>%
   mutate(topic = paste0("topic", topic)) %>%
   spread(topic, beta) %>%
   filter(topic1 > .001 | topic2 > .001) %>%
   mutate(log_ratio = log2(topic2 / topic1))
+
 beta_spread %>%
   group_by(direction = log_ratio > 0) %>%
   top_n(10, abs(log_ratio)) %>%
@@ -793,14 +791,91 @@ beta_spread %>%
     x = "Log2 odds ratio dei betas tra topic 2 / topic 1",
     y = ""
     )+ 
-  theme_xaringan()
+  theme_oi2()
 
 ```
 
 
+## network di bigrammi 
 
-## word factor count: 
+```{r bigramsnet}
 
+
+library(ggraph, warn.conflicts = F, quietly = T)
+library(igraph, warn.conflicts = F, quietly = T)
+
+
+austen_bigrams <- austen_books() %>%
+  unnest_tokens(bigram, text, token = "ngrams", n = 2)
+
+bigrams_separated <- austen_bigrams %>%
+  separate(bigram, c("word1", "word2"), sep = " ")
+
+bigrams_filtered <- bigrams_separated %>%
+  filter(!word1 %in% stop_words$word) %>%
+  filter(!word2 %in% stop_words$word)
+
+# new bigram counts:
+bigram_counts <- bigrams_filtered %>% 
+  count(word1, word2, sort = TRUE)
+
+bigrams_united <- bigrams_filtered %>%
+  unite(bigram, word1, word2, sep = " ")
+
+bigrams_united %>% 
+  head(30) %>% 
+    reactable(searchable = TRUE,
+            minRows = 8,
+            theme = reactableTheme(
+    borderColor = "#1c5253",
+    stripedColor = "#1c5253",
+    highlightColor = "#1c5253",
+    cellPadding = "8px 12px",
+    style = list(fontFamily = "-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif"),
+    searchInputStyle = list(width = "100%")
+  ))
+
+#########################
+#########################
+
+ger_bigram = germania %>%
+  unnest_tokens(bigram, text, token = "ngrams", n = 2)
+
+
+bigrams_separated_ger <- ger_bigram %>%
+  separate(bigram, c("word1", "word2"), sep = " ")
+
+bigrams_filtered <- bigrams_separated_ger %>%
+  filter(!word1 %in% stop_words$word) %>%
+  filter(!word2 %in% stop_words$word)
+
+# new bigram counts:
+bigram_counts <- bigrams_filtered %>% 
+  count(word1, word2, sort = TRUE)
+set.seed(2021)
+
+bigram_graph <- bigram_counts %>%
+  filter(n > 5) %>%
+  graph_from_data_frame()
+
+
+a <- grid::arrow(type = "closed", length = unit(.15, "inches"))
+
+ggraph(bigram_graph, layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
+                 arrow = a, end_cap = circle(.07, 'inches')) +
+  geom_node_point(color = "lightblue", size = 5) +
+  geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
+  theme_void()
+
+
+## approccio funzionale al network di bigrammi 
+## 
+
+
+
+
+```
 
 
 
