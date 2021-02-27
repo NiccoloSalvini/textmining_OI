@@ -854,6 +854,9 @@ bigram_counts <- bigrams_filtered %>%
   count(word1, word2, sort = TRUE)
 set.seed(2021)
 
+bigrams_united <- bigrams_filtered %>%
+  unite(bigram, word1, word2, sep = " ")
+
 bigram_graph <- bigram_counts %>%
   filter(n > 5) %>%
   graph_from_data_frame()

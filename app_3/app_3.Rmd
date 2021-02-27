@@ -25,15 +25,15 @@ library(reactable, warn.conflicts = F, quietly = T)
 
 
 
-
-francia = pdf_text("data/francia.pdf") %>%
+## drake task
+francia = pdf_text(here("data","francia.pdf")) %>%
   readr::read_lines() %>%  
   str_squish() %>% 
   as_tibble() %>% 
   mutate(paese= forcats::as_factor("francia")) %>% 
   rename(text = value)
 
-germania = pdf_text("data/germania.pdf") %>%
+germania = pdf_text(here("data","germania.pdf")) %>%
   readr::read_lines() %>%
    str_squish() %>%  
   as_tibble() %>% 
@@ -50,19 +50,35 @@ TO-DO list:
 
 - 
 
-```{r bigraminsp}
+```{r bigramsnet}
 
 
-ger_bigram =  reactive({  germania %>%
-  unnest_tokens(bigram, text, token = "ngrams", n = 2)
+
+country <- c("francia", "germania")
+
+
+inputPanel(
+  
+  numericInput("filter", "Filtra il n° dei Bigrammi", 5, min = 1, max = 100),
+  
+  selectInput("country", label = "Seleziona Paese", choices = country,
+              selected = country[2])
+)
+
+
+
+ger_bigram =  reactive({  both_pnr %>%
+    dplyr::filter(paese == input$country) %>% 
+    unnest_tokens(bigram, text, token = "ngrams", n = 2) %>% 
+    anti_join(get_stopwords("en")) 
 })
 
 
-bigrams_separated_ger <-reactive({   ger_bigram %>%
+bigrams_separated_ger <-reactive({   ger_bigram() %>%
   separate(bigram, c("word1", "word2"), sep = " ")
 })
 
-bigrams_filtered <-reactive({   bigrams_separated_ger %>%
+bigrams_filtered <-reactive({   bigrams_separated_ger() %>%
   filter(!word1 %in% stop_words$word) %>%
   filter(!word2 %in% stop_words$word)
   
@@ -70,13 +86,13 @@ bigrams_filtered <-reactive({   bigrams_separated_ger %>%
 
 # new bigram counts:
 bigram_counts <- reactive({  
-  bigrams_filtered %>% 
+  bigrams_filtered() %>% 
   count(word1, word2, sort = TRUE)
 
 })
 
 bigrams_united <- reactive({  
-  bigrams_filtered %>%
+  bigrams_filtered() %>%
   unite(bigram, word1, word2, sep = " ")
   
 })
@@ -85,8 +101,8 @@ bigrams_united <- reactive({
 set.seed(2021)
 
 bigram_graph <- reactive({   
-  bigram_counts %>%
-  filter(n > 5) %>%
+  bigram_counts() %>%
+  filter(n > input$filter) %>%
   graph_from_data_frame()
 
 })
@@ -116,7 +132,6 @@ bigram_graph <- reactive({
 renderReactable({
       
   bigrams_united() %>% 
-  head(30) %>% 
     reactable(searchable = TRUE,
             minRows = 8,
             theme = reactableTheme(
@@ -132,9 +147,9 @@ renderReactable({
 renderPlot({
     
   
-  a <- grid::arrow(type = "closed", length = unit(.15, "inches"))
+  a = grid::arrow(type = "closed", length = unit(.15, "inches"))
   
-  ggraph(bigram_graph, layout = "fr") +
+  ggraph(bigram_graph(), layout = "fr") +
     geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
                    arrow = a, end_cap = circle(.07, 'inches')) +
     geom_node_point(color = "lightblue", size = 5) +
@@ -150,86 +165,3 @@ renderPlot({
 
 ```
 
-
-## network di bigrammi 
-
-```{r bigramsnet}
-
-
-library(ggraph, warn.conflicts = F, quietly = T)
-library(igraph, warn.conflicts = F, quietly = T)
-
-
-austen_bigrams <- austen_books() %>%
-  unnest_tokens(bigram, text, token = "ngrams", n = 2)
-
-bigrams_separated <- austen_bigrams %>%
-  separate(bigram, c("word1", "word2"), sep = " ")
-
-bigrams_filtered <- bigrams_separated %>%
-  filter(!word1 %in% stop_words$word) %>%
-  filter(!word2 %in% stop_words$word)
-
-# new bigram counts:
-bigram_counts <- bigrams_filtered %>% 
-  count(word1, word2, sort = TRUE)
-
-bigrams_united <- bigrams_filtered %>%
-  unite(bigram, word1, word2, sep = " ")
-
-library(reactable)
-
-bigrams_united %>% 
-  head(30) %>% 
-    reactable(searchable = TRUE,
-            minRows = 8,
-            theme = reactableTheme(
-    borderColor = "#1c5253",
-    stripedColor = "#1c5253",
-    highlightColor = "#1c5253",
-    cellPadding = "8px 12px",
-    style = list(fontFamily = "-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif"),
-    searchInputStyle = list(width = "100%")
-  ))
-
-#########################
-#########################
-
-ger_bigram = germania %>%
-  unnest_tokens(bigram, text, token = "ngrams", n = 2)
-
-
-bigrams_separated_ger <- ger_bigram %>%
-  separate(bigram, c("word1", "word2"), sep = " ")
-
-bigrams_filtered <- bigrams_separated_ger %>%
-  filter(!word1 %in% stop_words$word) %>%
-  filter(!word2 %in% stop_words$word)
-
-# new bigram counts:
-bigram_counts <- bigrams_filtered %>% 
-  count(word1, word2, sort = TRUE)
-set.seed(2021)
-
-bigram_graph <- bigram_counts %>%
-  filter(n > 5) %>%
-  graph_from_data_frame()
-
-
-a <- grid::arrow(type = "closed", length = unit(.15, "inches"))
-
-ggraph(bigram_graph, layout = "fr") +
-  geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
-                 arrow = a, end_cap = circle(.07, 'inches')) +
-  geom_node_point(color = "lightblue", size = 5) +
-  geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
-  theme_void()
-
-
-## approccio funzionale al network di bigrammi 
-## 
-
-
-
-
-```
