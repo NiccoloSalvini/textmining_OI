@@ -1,7 +1,11 @@
 ---
 title: "Explore Topics (Ger - Fra)"
 runtime: shiny
-output: html_document
+output:
+  html_document:
+    css: css/skeleton.css
+resource_files:
+- img/officine_italia.png
 ---
 
 ```{r setup, include=FALSE}
@@ -28,7 +32,11 @@ library(reshape2, warn.conflicts = F, quietly = T)
 <img src="img/officine_italia.png" align="right" height="60" />
 _last build date_: `r format(Sys.Date(), "%d %B, %Y")`
 
-**GOAL**: Qual è il numero giusto di _k_ e quali sono i topics associati ad ogni _k_ 
+**GOAL**: Associare ad ogni _k_ il relativo topic. In più trovare il numero opportuno di topics.
+
+
+**Documentazione**: IL numero di _k_ varia tra **5** e **20** con un minimo di **1**. Numeri superiori a 9 rovinano l'informazione del grafico. Numeri _negativi_ non ammessi.
+
 
 ```{r topicmining}
 
@@ -170,7 +178,7 @@ dtm_ger = reactive({
 ## fitting LDA model
 
 ger_lda <-  reactive({  
-  LDA(dtm_ger(), k = 5, control = list(seed = 2021))
+  LDA(dtm_ger(), k = input$topics, control = list(seed = 2021))
 })
 
 ger_lda_tidy <- reactive({ 
@@ -191,7 +199,7 @@ renderDataTable({
     lengthChange = FALSE,
     initComplete = JS(
       "function(settings, json) {",
-      "$(this.api().table().header()).css({'background-color': '#42f', 'color': '#fff'});",
+      "$(this.api().table().header()).css({'background-color': '#1c5253', 'color': '#fff'});",
       "}"),
     autowidth = TRUE,
     language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Italian.json'),

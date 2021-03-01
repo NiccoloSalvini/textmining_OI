@@ -1,7 +1,9 @@
 ---
 title: "Explore Trigrams (Ger - Fra)"
 runtime: shiny
-output: html_document
+output:
+  html_document:
+    css: css/skeleton.css
 ---
 
 ```{r setup, include=FALSE}
@@ -27,7 +29,12 @@ library(stopwords, warn.conflicts = F, quietly = T)
 
 _latest build date_: `r format(Sys.Date(), "%d %B, %Y")`
 
-Seleziona gli **Inputs**: le rispettive due parole delle cui vuoi indagare i trigrammi. L'ordine non conta. 
+**GOAL**: Esplorare le possibilità dei trigrammi.
+
+**Documentazione:** Seleziona gli **Inputs**, cioè le due parole iniziali. L'ordine non conta. Successivamente specificare quale _dizionario stopwords_ associare al paese:
+
+- per la Germania, l'Inglese
+- per la Francia, il Francese
 
 ```{r app, echo=FALSE}
 # param set
