@@ -109,9 +109,6 @@ germania = drop_read_pdf("germania.pdf") %>%
   rename(text = value)
 
 
-
-
-
 doppio_pdf = bind_rows(francia, germania)
 
 ## funs 
