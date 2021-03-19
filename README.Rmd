@@ -103,6 +103,8 @@ Apri il file di progetto nella cartella clonata `textmining_OI.Rproj`, successiv
 - [x] build minimal network eploration app
 - [x] style the CSS for mobile usage and for more confortable usage
 - [ ] deal with the BERT expert
+- [ ] connect to db (Dropbox)
+- [ ] test performance with [Profvis](https://rstudio.github.io/profvis/)
 
 ## Code of Conduct `r emo::ji("paper")`
 
