@@ -83,9 +83,15 @@ drop_read_pdf =function (country_name, dest = tempdir(), dtoken = get_dropbox_to
 <img src="img/officine_italia.png" align="right" height="60" />
 _last build date_: `r format(Sys.Date(), "%d %B, %Y")`
 
-**GOAL**: Esploriamo le relazioni tra Bigrammi, magari ve   ngono fuori dei clusters di parole che ci aiutano a vedere dei possibili topics. Un altro impiego è capire con un colpo d'occhio di che cosa parla il documento.
+####  **Obiettivo**: 
 
-**Documentazione**: Il filtro permette di tenere nel grafico solo i brigrammi il cui conto è maggiore del numero espresso. Infatti all'aumentare del filtro, diminuiscono i nodi del network.
+- Esploriamo le relazioni tra Bigrammi, magari ve   ngono fuori dei clusters di parole che ci aiutano a vedere dei possibili topics. Un altro impiego è capire con un colpo d'occhio di che cosa parla il documento.
+- Scarica il plot una volta che sei soddisfatto.
+
+#### **Documentazione**:
+
+- Il filtro permette di tenere nel grafico solo i brigrammi il cui conto è maggiore del numero espresso. Infatti all'aumentare del filtro, diminuiscono i nodi del network.
+
 
 
 ```{r bigramsnet}
@@ -189,6 +195,7 @@ bigram_graph <- reactive({
 
 
 
+
 renderReactable({
       
   bigrams_united() %>% 
@@ -222,6 +229,20 @@ renderPlot({
 #           )
 
 })
+
+
+downloadHandler(
+         filename = function(){
+           glue::glue("{input$country}_fil_{input$filter}.pdf")
+           },
+         content = function(file){
+          ggsave(file, plot = ggplot2::last_plot(), 
+                 device = "pdf",
+                 dpi = "retina",
+                  width = 20, 
+                 height = 10)
+    }
+)
 
 ```
 
