@@ -22,6 +22,44 @@ library(pdftools, warn.conflicts = F, quietly = T)
 library(purrrlyr, warn.conflicts = F, quietly = T)
 library(forcats, warn.conflicts = F, quietly = T)
 library(stopwords, warn.conflicts = F, quietly = T)
+library(rdrop2, quietly = T, warn.conflicts = F)
+
+
+
+## meccanismo per nascondere token
+drop_auth(rdstoken = here::here("app_1","drop_token.rds"))
+
+
+get_dropbox_token <- function() {
+  
+  if (!exists('.dstate') || is.null(.dstate$token)) {
+    drop_auth()
+  } else {
+    .dstate$token
+  }
+}
+
+drop_read_pdf =function (country_name, dest = tempdir(), dtoken = get_dropbox_token(),...){
+  
+  output_dir <- "PNRR"
+  file_info <- drop_dir(output_dir)
+  
+  if(!(country_name %in% file_info$name)){
+    stop(glue("il nome della nazione {country_name} non è nella cartella Dropbox, hai per caso sbagliato a digitare il nome? (scrivilo in italiano ITA)"))
+  }
+  
+  file_path <- file_info %>%
+    dplyr::filter(name == country_name) %>%
+    select(path_display) %>% 
+    pull()
+  
+  localfile = glue("{dest}/{basename(file_path)}")
+  
+  drop_download(file_path, localfile, overwrite = TRUE, dtoken = dtoken)
+  
+  pdftools::pdf_text(localfile, ...)
+}
+
 
 ```
 
@@ -43,19 +81,37 @@ n_top <- 150
 n_gramming <- 3
 
 ## drake task
-francia = pdf_text("data/francia.pdf") %>%
+# francia = pdf_text("data/francia.pdf") %>%
+#   readr::read_lines() %>%  
+#   str_squish() %>% 
+#   as_tibble() %>% 
+#   mutate(paese= forcats::as_factor("francia")) %>% 
+#   rename(text = value)
+# 
+# germania = pdf_text("data/germania.pdf") %>%
+#   readr::read_lines() %>%
+#    str_squish() %>%  
+#   as_tibble() %>% 
+#   mutate(paese= forcats::as_factor("germania")) %>% 
+#   rename(text = value)
+
+francia = drop_read_pdf("francia.pdf") %>% 
   readr::read_lines() %>%  
   str_squish() %>% 
   as_tibble() %>% 
   mutate(paese= forcats::as_factor("francia")) %>% 
   rename(text = value)
 
-germania = pdf_text("data/germania.pdf") %>%
-  readr::read_lines() %>%
-   str_squish() %>%  
+
+germania = drop_read_pdf("germania.pdf") %>% 
+  readr::read_lines() %>%  
+  str_squish() %>% 
   as_tibble() %>% 
   mutate(paese= forcats::as_factor("germania")) %>% 
   rename(text = value)
+
+
+
 
 
 doppio_pdf = bind_rows(francia, germania)
