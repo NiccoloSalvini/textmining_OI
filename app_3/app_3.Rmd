@@ -25,6 +25,9 @@ library(igraph, warn.conflicts = F, quietly = T)
 library(reactable, warn.conflicts = F, quietly = T)
 library(stopwords, warn.conflicts = F, quietly = T)
 library(rdrop2, quietly = T, warn.conflicts = F)
+library(emo, quietly = T, warn.conflicts = F)
+library(knitr, quietly = T, warn.conflicts = F)
+
 
 
 # importedFrom rdrop2
@@ -83,16 +86,30 @@ drop_read_pdf =function (country_name, dest = tempdir(), dtoken = get_dropbox_to
 <img src="img/officine_italia.png" align="right" height="60" />
 _last build date_: `r format(Sys.Date(), "%d %B, %Y")`
 
-####  **Obiettivo**: 
+####  **Obiettivo** `r emo::ji("bull")`: 
 
-- Esploriamo le relazioni tra Bigrammi, magari ve   ngono fuori dei clusters di parole che ci aiutano a vedere dei possibili topics. Un altro impiego è capire con un colpo d'occhio di che cosa parla il documento.
+- Esploriamo le relazioni tra Bigrammi, magari vengono fuori dei clusters di parole che ci aiutano a vedere dei possibili topics. Un altro impiego è capire con un colpo d'occhio di che cosa parla il documento.
 - Scarica il plot una volta che sei soddisfatto.
 
-#### **Documentazione**:
+#### **Documentazione** `r emo::ji("document")`:
 
 - Il filtro permette di tenere nel grafico solo i brigrammi il cui conto è maggiore del numero espresso. Infatti all'aumentare del filtro, diminuiscono i nodi del network.
+- Le analisi sono disponibili sulla base dei files .pdf dei [PNRR](https://ec.europa.eu/info/strategy/recovery-plan-europe_it) nell'account [Dropbpox](https://www.dropbox.com/login) con le credenziali:
+  - `r emo::ji("user")`: niccolo.salvini27@gmail.com
+  - `r emo::ji("password")`: ngw_db
+- I files disponibili nel ~ **DB** sono i seguenti (sono dinamici!):
 
+```{r paesedisp}
 
+output_dir <- "PNRR"
+file_info <- drop_dir(output_dir)
+file_info %>%
+  select(name, path_display,client_modified, size) %>% 
+  knitr::kable()
+
+```
+
+#### Dynamic Bigrams Network APP `r emo::ji("engine")`
 
 ```{r bigramsnet}
 
