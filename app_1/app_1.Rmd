@@ -25,17 +25,16 @@ library(stopwords, warn.conflicts = F, quietly = T)
 library(rdrop2, quietly = T, warn.conflicts = F)
 
 
-drop_auth(rdstoken = here::here("app_1","drop_token.rds"))
-
-# importedFrom rdrop2
+#  importedFrom rdrop2
 get_dropbox_token <- function() {
-  
+
   if (!exists('.dstate') || is.null(.dstate$token)) {
     drop_auth()
   } else {
-    .dstate$token
+
   }
 }
+
 # mod from rdrop2
 drop_read_pdf =function (country_name, dest = tempdir(), dtoken = get_dropbox_token(),...){
   
