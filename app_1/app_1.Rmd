@@ -46,6 +46,7 @@ drop_read_pdf =function (country_name, dest = tempdir(), dtoken = get_dropbox_to
     stop(glue("il nome della nazione {country_name} non è nella cartella Dropbox, hai per caso sbagliato a digitare il nome? (scrivilo in italiano ITA)"))
   }
   
+  
   file_path <- file_info %>%
     dplyr::filter(name == country_name) %>%
     select(path_display) %>% 
@@ -78,7 +79,7 @@ n_word <- 50
 n_top <- 150
 n_gramming <- 3
 
-## drake task
+## local save decomposed body
 # francia = pdf_text("data/francia.pdf") %>%
 #   readr::read_lines() %>%  
 #   str_squish() %>% 
