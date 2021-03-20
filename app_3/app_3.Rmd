@@ -4,6 +4,10 @@ runtime: shiny
 output:
   html_document:
     css: css/skeleton.css
+resource_files:
+- drop_token.rds
+- .httr-oauth
+- img/officine_italia.png
 ---
 
 ```{r setup, include=FALSE}
@@ -29,28 +33,17 @@ library(emo, quietly = T, warn.conflicts = F)
 library(knitr, quietly = T, warn.conflicts = F)
 
 
-
-# importedFrom rdrop2
-get_dropbox_token <- function() {
-  
-  if (!exists('.dstate') || is.null(.dstate$token)) {
-    drop_auth()
-  } else {
-    .dstate$token
-  }
-}
-
+token <- readRDS("drop_token.rds")
 
 # mod from rdrop2
-drop_read_pdf =function (country_name, dest = tempdir(), dtoken = get_dropbox_token(),...){
+drop_read_pdf =function (country_name, dest = tempdir(), dtoken = token, ...){
   
   output_dir <- "PNRR"
-  file_info <- drop_dir(output_dir)
+  file_info <- drop_dir(output_dir, dtoken = token)
   
   if(!(country_name %in% file_info$name)){
     stop(glue("il nome della nazione {country_name} non è nella cartella Dropbox, hai per caso sbagliato a digitare il nome? (scrivilo in italiano ITA)"))
   }
-  
   
   file_path <- file_info %>%
     dplyr::filter(name == country_name) %>%
@@ -59,7 +52,7 @@ drop_read_pdf =function (country_name, dest = tempdir(), dtoken = get_dropbox_to
   
   localfile = glue("{dest}/{basename(file_path)}")
   
-  drop_download(file_path, localfile, overwrite = TRUE, dtoken = dtoken)
+  drop_download(file_path, localfile, overwrite = TRUE, dtoken = token)
   
   pdftools::pdf_text(localfile, ...)
 }
@@ -102,7 +95,7 @@ _last build date_: `r format(Sys.Date(), "%d %B, %Y")`
 ```{r paesedisp}
 
 output_dir <- "PNRR"
-file_info <- drop_dir(output_dir)
+file_info <- drop_dir(output_dir, dtoken = token)
 file_info %>%
   select(name, path_display,client_modified, size) %>% 
   knitr::kable()
@@ -114,69 +107,68 @@ file_info %>%
 ```{r bigramsnet}
 
 
-francia = drop_read_pdf("francia.pdf") %>%
+francia <- drop_read_pdf("francia.pdf") %>%
   readr::read_lines() %>%
   str_squish() %>%
   as_tibble() %>%
-  mutate(paese= forcats::as_factor("francia")) %>%
+  mutate(paese = forcats::as_factor("francia")) %>%
   rename(text = value)
 
 
-germania = drop_read_pdf("germania.pdf") %>%
+germania <- drop_read_pdf("germania.pdf") %>%
   readr::read_lines() %>%
   str_squish() %>%
   as_tibble() %>%
-  mutate(paese= forcats::as_factor("germania")) %>%
+  mutate(paese = forcats::as_factor("germania")) %>%
   rename(text = value)
 
-both_pnr = bind_rows(francia,germania)
+both_pnr <- bind_rows(francia, germania)
 
-arreter_mots = get_stopwords("fr") 
+arreter_mots <- get_stopwords("fr")
 
 country <- c("francia", "germania")
 
 
 inputPanel(
-  
   numericInput("filter", "Filtra il n° dei Bigrammi", 5, min = 1, max = 100),
-  
-  selectInput("country", label = "Seleziona Paese", choices = country,
-              selected = country[2])
+
+  selectInput("country",
+    label = "Seleziona Paese", choices = country,
+    selected = country[2]
+  )
 )
 
 
 
-ger_bigram =  reactive({  both_pnr %>%
-    dplyr::filter(paese == input$country) %>% 
-    unnest_tokens(bigram, text, token = "ngrams", n = 2) 
-
+ger_bigram <- reactive({
+  both_pnr %>%
+    dplyr::filter(paese == input$country) %>%
+    unnest_tokens(bigram, text, token = "ngrams", n = 2)
 })
 
 
-bigrams_separated_ger <-reactive({   
+bigrams_separated_ger <- reactive({
   ger_bigram() %>%
-  separate(bigram, c("word1", "word2"), sep = " ")
+    separate(bigram, c("word1", "word2"), sep = " ")
 })
 
-bigrams_filtered <-reactive({   
+bigrams_filtered <- reactive({
   bigrams_separated_ger() %>%
     filter(!word1 %in% stop_words$word) %>%
     filter(!word2 %in% stop_words$word) %>%
     filter(!word1 %in% arreter_mots$word) %>%
     filter(!word2 %in% arreter_mots$word)
-  
 })
 
 # new bigram counts:
-bigram_counts <- reactive({  
-  bigrams_filtered() %>% 
-  count(word1, word2, sort = TRUE)
-
+bigram_counts <- reactive({
+  bigrams_filtered() %>%
+    count(word1, word2, sort = TRUE)
 })
 
 bigrams_united <- reactive({
   bigrams_filtered() %>%
-    select(-paese) %>% 
+    select(-paese) %>%
     unite(bigram, sep = " ") %>%
     count(bigram, sort = TRUE)
 })
@@ -184,14 +176,13 @@ bigrams_united <- reactive({
 
 set.seed(2021)
 
-bigram_graph <- reactive({   
+bigram_graph <- reactive({
   bigram_counts() %>%
-  filter(n > input$filter) %>%
-  graph_from_data_frame()
-
+    filter(n > input$filter) %>%
+    graph_from_data_frame()
 })
 
-# 
+#
 # DT::renderDataTable({
 #     DT::datatable(bigrams_united(),
 #                   rownames = FALSE,
@@ -205,60 +196,62 @@ bigram_graph <- reactive({
 #     language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Italian.json'),
 #     columnDefs = list(list(width = '70%', targets = 1))
 #     )
-#     ) %>% 
-#     DT::formatPercentage('beta', 2)  %>% 
-#     DT::formatStyle('beta', fontWeight = DT::styleInterval(1, c('normal', 'bold'))) 
+#     ) %>%
+#     DT::formatPercentage('beta', 2)  %>%
+#     DT::formatStyle('beta', fontWeight = DT::styleInterval(1, c('normal', 'bold')))
 # })
 
 
 
 
 renderReactable({
-      
-  bigrams_united() %>% 
-    reactable(searchable = TRUE,
-            minRows = 8,
-            theme = reactableTheme(
-    borderColor = "#1c5253",
-    stripedColor = "#1c5253",
-    highlightColor = "#1c5253",
-    cellPadding = "8px 12px",
-    style = list(fontFamily = "-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif"),
-    searchInputStyle = list(width = "100%")
-  ))
+  bigrams_united() %>%
+    reactable(
+      searchable = TRUE,
+      minRows = 8,
+      theme = reactableTheme(
+        borderColor = "#1c5253",
+        stripedColor = "#1c5253",
+        highlightColor = "#1c5253",
+        cellPadding = "8px 12px",
+        style = list(fontFamily = "-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif"),
+        searchInputStyle = list(width = "100%")
+      )
+    )
 })
 
 renderPlot({
-    
-  
-  a = grid::arrow(type = "closed", length = unit(.15, "inches"))
-  
+  a <- grid::arrow(type = "closed", length = unit(.15, "inches"))
+
   ggraph(bigram_graph(), layout = "fr") +
-    geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
-                   arrow = a, end_cap = circle(.07, 'inches')) +
+    geom_edge_link(aes(edge_alpha = n),
+      show.legend = FALSE,
+      arrow = a, end_cap = circle(.07, "inches")
+    ) +
     geom_node_point(color = "lightblue", size = 5) +
     geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
     theme_void()
-# 
-#     theme(axis.text.x = element_text(angle = 25, vjust = 0.5, hjust=1),
-#           plot.background = ggplot2::element_blank(),
-#           panel.background = ggplot2::element_blank()
-#           )
-
+  #
+  #     theme(axis.text.x = element_text(angle = 25, vjust = 0.5, hjust=1),
+  #           plot.background = ggplot2::element_blank(),
+  #           panel.background = ggplot2::element_blank()
+  #           )
 })
 
 
 downloadHandler(
-         filename = function(){
-           glue::glue("{input$country}_fil_{input$filter}.pdf")
-           },
-         content = function(file){
-          ggsave(file, plot = ggplot2::last_plot(), 
-                 device = "pdf",
-                 dpi = "retina",
-                  width = 20, 
-                 height = 10)
-    }
+  filename = function() {
+    glue::glue("{input$country}_fil_{input$filter}.pdf")
+  },
+  content = function(file) {
+    ggsave(file,
+      plot = ggplot2::last_plot(),
+      device = "pdf",
+      dpi = "retina",
+      width = 20,
+      height = 10
+    )
+  }
 )
 
 ```

@@ -5,9 +5,8 @@ account: niccolosalvini
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 3708000
-bundleId: 4284809
+bundleId: 4373986
 url: https://niccolosalvini.shinyapps.io/app_3/
-when: 1614589820.26907
+when: 1616277382.20997
 asMultiple: FALSE
 asStatic: FALSE
-additionalFiles: img/officine_italia.png

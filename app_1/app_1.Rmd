@@ -4,6 +4,10 @@ runtime: shiny
 output:
   html_document:
     css: css/skeleton.css
+resource_files:
+- drop_token.rds
+- .httr-oauth
+- img/officine_italia.png
 ---
 
 ```{r setup, include=FALSE}
@@ -27,27 +31,17 @@ library(emo, quietly = T, warn.conflicts = F)
 library(knitr, quietly = T, warn.conflicts = F)
 
 
-
-#  importedFrom rdrop2
-get_dropbox_token <- function() {
-
-  if (!exists('.dstate') || is.null(.dstate$token)) {
-    drop_auth()
-  } else {
-
-  }
-}
+token <- readRDS("drop_token.rds")
 
 # mod from rdrop2
-drop_read_pdf =function (country_name, dest = tempdir(), dtoken = get_dropbox_token(),...){
+drop_read_pdf =function (country_name, dest = tempdir(), dtoken = token,...){
   
   output_dir <- "PNRR"
-  file_info <- drop_dir(output_dir)
+  file_info <- drop_dir(output_dir, dtoken = token)
   
   if(!(country_name %in% file_info$name)){
     stop(glue("il nome della nazione {country_name} non è nella cartella Dropbox, hai per caso sbagliato a digitare il nome? (scrivilo in italiano ITA)"))
   }
-  
   
   file_path <- file_info %>%
     dplyr::filter(name == country_name) %>%
@@ -56,7 +50,7 @@ drop_read_pdf =function (country_name, dest = tempdir(), dtoken = get_dropbox_to
   
   localfile = glue("{dest}/{basename(file_path)}")
   
-  drop_download(file_path, localfile, overwrite = TRUE, dtoken = dtoken)
+  drop_download(file_path, localfile, overwrite = TRUE, dtoken = token)
   
   pdftools::pdf_text(localfile, ...)
 }
@@ -88,7 +82,7 @@ _latest build date_: `r format(Sys.Date(), "%d %B, %Y")`
 ```{r paesedisp}
 
 output_dir <- "PNRR"
-file_info <- drop_dir(output_dir)
+file_info <- drop_dir(output_dir, dtoken = token)
 file_info %>%
   select(name, path_display,client_modified, size) %>% 
   knitr::kable()
@@ -195,7 +189,7 @@ inputPanel(
               selected = country[2]), 
   
   radioButtons("stopw", "Stopwords: ",
-               c("Tedesche AKA inglesi" = "en",
+               c("Inglesi (doc Tedesco)" = "en",
                  "Francesi" = "fr"))
   
   # downloadButton('downloadPlot', 'Download Plot')
