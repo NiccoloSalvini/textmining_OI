@@ -5,13 +5,15 @@ output:
   html_document:
     css: css/skeleton.css
 resource_files:
-- img/officine_italia.png
+  - img/officine_italia.png
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, 
-                      message = FALSE, 
-                      warning = FALSE)
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE
+)
 
 library(tidyverse, warn.conflicts = F, quietly = T)
 library(glue, warn.conflicts = F, quietly = T)
@@ -25,6 +27,34 @@ library(htmlwidgets, warn.conflicts = F, quietly = T)
 library(DT, warn.conflicts = F, quietly = T)
 library(stopwords, warn.conflicts = F, quietly = T)
 library(reshape2, warn.conflicts = F, quietly = T)
+library(rdrop2, warn.conflicts = F, quietly = T)
+library(emo, quietly = T, warn.conflicts = F)
+library(knitr, quietly = T, warn.conflicts = F)
+
+token <- readRDS("drop_token.rds")
+
+# mod from rdrop2
+drop_read_pdf <- function(country_name, dest = tempdir(), dtoken = token, ...) {
+  output_dir <- "PNRR"
+  file_info <- drop_dir(output_dir, dtoken = token)
+
+  if (!(country_name %in% file_info$name)) {
+    stop(glue("il nome della nazione {country_name} non è nella cartella Dropbox, hai per caso sbagliato a digitare il nome? (scrivilo in italiano ITA)"))
+  }
+
+
+  file_path <- file_info %>%
+    dplyr::filter(name == country_name) %>%
+    select(path_display) %>%
+    pull()
+
+  localfile <- glue("{dest}/{basename(file_path)}")
+
+  drop_download(file_path, localfile, overwrite = TRUE, dtoken = token)
+
+  pdftools::pdf_text(localfile, ...)
+}
+
 
 
 ```
@@ -32,62 +62,99 @@ library(reshape2, warn.conflicts = F, quietly = T)
 <img src="img/officine_italia.png" align="right" height="60" />
 _last build date_: `r format(Sys.Date(), "%d %B, %Y")`
 
-**GOAL**: Associare ad ogni _k_ il relativo topic. In più trovare il numero opportuno di topics.
+#### **Obiettivi** `r emo::ji("bull")`: 
+
+- Associare ad ogni _k_ il relativo topic.
+- Trovare il numero esatto di topics che massimizza l'appartenenza di ogni parola al numero di _k_ topics.
+- Scarica il plot una volta che sei soddisfatto.
 
 
-**Documentazione**: IL numero di _k_ varia tra **5** e **20** con un minimo di **1**. Numeri superiori a 9 rovinano l'informazione del grafico. Numeri _negativi_ non ammessi.
+#### **Documentazione** `r emo::ji("document")` :
 
+- IL numero di _k_ varia tra **5** e **20** con un minimo di **1**. Numeri superiori a 9 rovinano l'informazione del grafico. Numeri _negativi_ non ammessi.
+
+- Le analisi sono disponibili sulla base dei files .pdf dei [PNRR](https://ec.europa.eu/info/strategy/recovery-plan-europe_it) nell'account [Dropbpox](https://www.dropbox.com/login) con le credenziali:
+  - `r emo::ji("user")`: niccolo.salvini27@gmail.com
+  - `r emo::ji("password")`: ngw_db
+- I files disponibili nel ~ **DB** sono i seguenti (sono dinamici!):
+
+```{r paesedisp}
+
+output_dir <- "PNRR"
+file_info <- drop_dir(output_dir, dtoken = token)
+file_info %>%
+  select(name, path_display,client_modified, size) %>% 
+  knitr::kable()
+
+```
+
+#### Explore dynamically Topics  `r emo::ji("engine")`
 
 ```{r topicmining}
 
 ## labelling manuale per germania
 
-ger_sec_1 = pdftools::pdf_text("data/germania.pdf")[7:9] %>%  
-  readr::read_lines() %>% 
-  str_squish() %>% 
-  as_tibble() %>% 
-  mutate(paese= forcats::as_factor("germania"),
-         sect = forcats::as_factor("Summary")) %>% 
+ger_full <- drop_read_pdf("germania.pdf")
+fra_full <- drop_read_pdf("francia.pdf")
+
+ger_sec_1 <- ger_full[7:9] %>%
+  readr::read_lines() %>%
+  str_squish() %>%
+  as_tibble() %>%
+  mutate(
+    paese = forcats::as_factor("germania"),
+    sect = forcats::as_factor("Summary")
+  ) %>%
   rename(text = value)
 
-ger_sec_2 = pdftools::pdf_text("data/germania.pdf")[11] %>%  
-  readr::read_lines() %>% 
-  str_squish() %>% 
-  as_tibble() %>% 
-  mutate(paese= forcats::as_factor("germania"),
-         sect = forcats::as_factor("Financial framework")) %>% 
+ger_sec_2 <- ger_full[11] %>%
+  readr::read_lines() %>%
+  str_squish() %>%
+  as_tibble() %>%
+  mutate(
+    paese = forcats::as_factor("germania"),
+    sect = forcats::as_factor("Financial framework")
+  ) %>%
   rename(text = value)
 
-ger_sec_3 = pdftools::pdf_text("data/germania.pdf")[13:15] %>%  
-  readr::read_lines() %>% 
-  str_squish() %>% 
-  as_tibble() %>% 
-  mutate(paese= forcats::as_factor("germania"),
-         sect = forcats::as_factor("Linking the plan with the European Semester")) %>% 
+ger_sec_3 <- ger_full[13:15] %>%
+  readr::read_lines() %>%
+  str_squish() %>%
+  as_tibble() %>%
+  mutate(
+    paese = forcats::as_factor("germania"),
+    sect = forcats::as_factor("Linking the plan with the European Semester")
+  ) %>%
   rename(text = value)
 
-ger_sec_4 = pdftools::pdf_text("data/germania.pdf")[17:19] %>%  
-  readr::read_lines() %>% 
-  str_squish() %>% 
-  as_tibble() %>% 
-  mutate(paese= forcats::as_factor("germania"),
-         sect = forcats::as_factor("Description of investment measures and reforms")) %>% 
+ger_sec_4 <- ger_full[17:19] %>%
+  readr::read_lines() %>%
+  str_squish() %>%
+  as_tibble() %>%
+  mutate(
+    paese = forcats::as_factor("germania"),
+    sect = forcats::as_factor("Description of investment measures and reforms")
+  ) %>%
   rename(text = value)
 
-ger_sec_5 = pdftools::pdf_text("data/germania.pdf")[21:41] %>%  
-  readr::read_lines() %>% 
-  str_squish() %>% 
-  as_tibble() %>% 
-  mutate(paese= forcats::as_factor("germania"),
-         sect = forcats::as_factor("Details of focus areas for measures and components")) %>% 
+ger_sec_5 <- ger_full[21:41] %>%
+  readr::read_lines() %>%
+  str_squish() %>%
+  as_tibble() %>%
+  mutate(
+    paese = forcats::as_factor("germania"),
+    sect = forcats::as_factor("Details of focus areas for measures and components")
+  ) %>%
   rename(text = value)
 
-ger_sec_6 = pdftools::pdf_text("data/germania.pdf")[43] %>%  
-  readr::read_lines() %>% 
-  str_squish() %>% 
-  as_tibble() %>% 
-  mutate(paese= forcats::as_factor("germania"),
-         sect = forcats::as_factor("Institutional governance of the German Recovery and Resilience Plan")) %>% 
+ger_sec_6 <- ger_full[43] %>%
+  readr::read_lines() %>%
+  str_squish() %>%
+  as_tibble() %>%
+  mutate(
+    paese = forcats::as_factor("germania"),
+    sect = forcats::as_factor("Institutional governance of the German Recovery and Resilience Plan")
+  ) %>%
   rename(text = value)
 
 
@@ -97,79 +164,85 @@ ger_sec_6 = pdftools::pdf_text("data/germania.pdf")[43] %>%
 ##### qui per macro-aree
 
 
-fr_sec_1 = pdftools::pdf_text("data/francia.pdf")[3:4] %>%  
-  readr::read_lines() %>% 
-  str_squish() %>% 
-  as_tibble() %>% 
-  mutate(paese= forcats::as_factor("francia"),
-         sect = forcats::as_factor("introduction")) %>% 
+fr_sec_1 <- fra_full[3:4] %>%
+  readr::read_lines() %>%
+  str_squish() %>%
+  as_tibble() %>%
+  mutate(
+    paese = forcats::as_factor("francia"),
+    sect = forcats::as_factor("introduction")
+  ) %>%
   rename(text = value)
 
 
-fr_sec_2 = pdftools::pdf_text("data/francia.pdf")[9:116] %>%  
-  readr::read_lines() %>% 
-  str_squish() %>% 
-  as_tibble() %>% 
-  mutate(paese= forcats::as_factor("francia"),
-         sect = forcats::as_factor("Écologie")) %>% 
+fr_sec_2 <- fra_full[9:116] %>%
+  readr::read_lines() %>%
+  str_squish() %>%
+  as_tibble() %>%
+  mutate(
+    paese = forcats::as_factor("francia"),
+    sect = forcats::as_factor("Écologie")
+  ) %>%
   rename(text = value)
 
-fr_sec_3 = pdftools::pdf_text("data/francia.pdf")[117:162] %>%  
-  readr::read_lines() %>% 
-  str_squish() %>% 
-  as_tibble() %>% 
-  mutate(paese= forcats::as_factor("francia"),
-         sect = forcats::as_factor("Compétitivité")) %>% 
+fr_sec_3 <- fra_full[117:162] %>%
+  readr::read_lines() %>%
+  str_squish() %>%
+  as_tibble() %>%
+  mutate(
+    paese = forcats::as_factor("francia"),
+    sect = forcats::as_factor("Compétitivité")
+  ) %>%
   rename(text = value)
 
-fr_sec_4 = pdftools::pdf_text("data/francia.pdf")[163:289] %>%  
-  readr::read_lines() %>% 
-  str_squish() %>% 
-  as_tibble() %>% 
-  mutate(paese= forcats::as_factor("francia"),
-         sect = forcats::as_factor("Cohésion")) %>% ## qui ci sono i giovani come Jeunes
+fr_sec_4 <- fra_full[163:289] %>%
+  readr::read_lines() %>%
+  str_squish() %>%
+  as_tibble() %>%
+  mutate(
+    paese = forcats::as_factor("francia"),
+    sect = forcats::as_factor("Cohésion")
+  ) %>% ## qui ci sono i giovani come Jeunes
   rename(text = value)
 
-ger_doc = bind_rows(ger_sec_1, ger_sec_2, ger_sec_3, ger_sec_4,ger_sec_5, ger_sec_6)
-fr_doc = bind_rows(fr_sec_1, fr_sec_2, fr_sec_3, fr_sec_4)
+ger_doc <- bind_rows(ger_sec_1, ger_sec_2, ger_sec_3, ger_sec_4, ger_sec_5, ger_sec_6)
+fr_doc <- bind_rows(fr_sec_1, fr_sec_2, fr_sec_3, fr_sec_4)
 
-doppio_pdf = bind_rows(fr_doc, ger_doc)
-country = c("francia", "germania")
+doppio_pdf <- bind_rows(fr_doc, ger_doc)
+country <- c("francia", "germania")
 
 
 
 inputPanel(
-  
   numericInput("topics", "N° of Topics (k)", 5, min = 1, max = 20),
-  
-  selectInput("country", label = "Seleziona Paese", choices = country,
-              selected = country[2])
-  
+
+  selectInput("country",
+    label = "Seleziona Paese", choices = country,
+    selected = country[2]
+  )
 )
 
 
-ger_by_sec_word = reactive({  
+ger_by_sec_word <- reactive({
 
   # doppio_pdf %>%
   #   dplyr::filter(paese == input$country) %>%
 
-  if(identical(input$country,"germania")){
+  if (identical(input$country, "germania")) {
     ger_doc %>%
       unnest_tokens(word, text) %>%
       anti_join(get_stopwords(language = "en")) %>%
-      count(sect, word,paese, sort = TRUE)  
-    
+      count(sect, word, paese, sort = TRUE)
   } else {
     fr_doc %>%
       unnest_tokens(word, text) %>%
       anti_join(get_stopwords(language = "fr")) %>%
-      count(sect, word,paese, sort = TRUE)  
+      count(sect, word, paese, sort = TRUE)
   }
-  
 })
 
 
-dtm_ger = reactive({
+dtm_ger <- reactive({
   ger_by_sec_word() %>%
     cast_dtm(sect, word, n)
 })
@@ -177,55 +250,70 @@ dtm_ger = reactive({
 
 ## fitting LDA model
 
-ger_lda <-  reactive({  
+ger_lda <- reactive({
   LDA(dtm_ger(), k = input$topics, control = list(seed = 2021))
 })
 
-ger_lda_tidy <- reactive({ 
+ger_lda_tidy <- reactive({
   tidy(ger_lda(), matrix = "beta")
 })
 
-top_terms <- reactive({  ger_lda_tidy() %>%
-  group_by(topic) %>%
-  slice_max(beta, n = 10, with_ties = FALSE) %>%
-  ungroup() %>%
-  arrange(topic, -beta)
+top_terms <- reactive({
+  ger_lda_tidy() %>%
+    group_by(topic) %>%
+    slice_max(beta, n = 10, with_ties = FALSE) %>%
+    ungroup() %>%
+    arrange(topic, -beta)
 })
 
 renderDataTable({
-    datatable(top_terms(),
-                  rownames = FALSE,
-                  options = list(
-    lengthChange = FALSE,
-    initComplete = JS(
-      "function(settings, json) {",
-      "$(this.api().table().header()).css({'background-color': '#1c5253', 'color': '#fff'});",
-      "}"),
-    autowidth = TRUE,
-    language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Italian.json'),
-    columnDefs = list(list(width = '70%', targets = 1))
+  datatable(top_terms(),
+    rownames = FALSE,
+    options = list(
+      lengthChange = FALSE,
+      initComplete = JS(
+        "function(settings, json) {",
+        "$(this.api().table().header()).css({'background-color': '#1c5253', 'color': '#fff'});",
+        "}"
+      ),
+      autowidth = TRUE,
+      language = list(url = "//cdn.datatables.net/plug-ins/1.10.11/i18n/Italian.json"),
+      columnDefs = list(list(width = "70%", targets = 1))
     )
-    ) %>% 
-    formatPercentage('beta', 2)  %>% 
-    formatStyle('beta', fontWeight = styleInterval(1, c('normal', 'bold'))) 
+  ) %>%
+    formatPercentage("beta", 2) %>%
+    formatStyle("beta", fontWeight = styleInterval(1, c("normal", "bold")))
 })
 
 
 renderPlot({
-  
   top_terms() %>%
     mutate(term = reorder_within(term, beta, topic)) %>%
     ggplot(aes(beta, term, fill = factor(topic))) +
     geom_col(show.legend = FALSE) +
-    facet_wrap(~ topic, scales = "free") +
-    scale_y_reordered()+ 
+    facet_wrap(~topic, scales = "free") +
+    scale_y_reordered() +
     xlab(" ") +
     ylab(" ") +
-    theme(axis.text.x = element_text(angle = 25, vjust = 0.5, hjust=1),
-          plot.background = ggplot2::element_blank(),
-          panel.background = ggplot2::element_blank()
-          )
-
+    theme(
+      axis.text.x = element_text(angle = 25, vjust = 0.5, hjust = 1),
+      plot.background = ggplot2::element_blank(),
+      panel.background = ggplot2::element_blank()
+    )
 })
+
+
+downloadHandler(
+  filename = function() {
+    glue::glue("{input$country}_topics_{input$topics}.pdf")
+  },
+  content = function(file) {
+    ggsave(file,
+      plot = ggplot2::last_plot(),
+      device = "pdf",
+      dpi = "retina"
+    )
+  }
+)
 
 ```
