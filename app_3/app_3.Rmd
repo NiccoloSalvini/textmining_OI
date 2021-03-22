@@ -1,5 +1,5 @@
 ---
-title: 'Network di Bigrammi (Ger - Fra)'
+title: 'Network di Bigrammi'
 runtime: shiny
 output:
   html_document:
@@ -61,23 +61,6 @@ drop_read_pdf =function (country_name, dest = tempdir(), dtoken = token, ...){
     rename(text = value)
 }
 
-## .. maybe drake task
-# 
-# francia = pdf_text("data/francia.pdf") %>%
-#   readr::read_lines() %>%
-#   str_squish() %>%
-#   as_tibble() %>%
-#   mutate(paese= forcats::as_factor("francia")) %>%
-#   rename(text = value)
-# 
-# germania = pdf_text("data/germania.pdf") %>%
-#   readr::read_lines() %>%
-#    str_squish() %>%
-#   as_tibble() %>%
-#   mutate(paese= forcats::as_factor("germania")) %>%
-#   rename(text = value)
-# 
-# both_pnr = bind_rows(francia,germania)
 ```
 
 <img src="img/officine_italia.png" align="right" height="60" />
@@ -91,6 +74,7 @@ _last build date_: `r format(Sys.Date(), "%d %B, %Y")`
 #### **Documentazione** `r emo::ji("document")`:
 
 - Il filtro permette di tenere nel grafico solo i brigrammi il cui conto è maggiore del numero espresso. Infatti all'aumentare del filtro, diminuiscono i nodi del network.
+- setta il _seed_ per avere assortimenti di network diversi, a parità di _seed_ il netowrk rimane uguale, se cambia, allora cambia anche la disposizione dei nodi (non l'intesità, definita dalla freccia) 
 - Le analisi sono disponibili sulla base dei files .pdf dei [PNRR](https://ec.europa.eu/info/strategy/recovery-plan-europe_it) nell'account [Dropbpox](https://www.dropbox.com/login) con le credenziali:
   - `r emo::ji("user")`: niccolo.salvini27@gmail.com
   - `r emo::ji("password")`: ngw_db
@@ -100,6 +84,7 @@ _last build date_: `r format(Sys.Date(), "%d %B, %Y")`
 
 output_dir <- "PNRR"
 file_info <- drop_dir(output_dir, dtoken = token)
+
 file_info %>%
   select(name, path_display,client_modified, size) %>% 
   knitr::kable()
@@ -128,24 +113,15 @@ inputPanel(
     label = "Selezionam PNRR Paese", choices = pnrrs_names,
     selected = pnrrs_names[2]
   )
+  
 )
-
-# 
-# francia <- drop_read_pdf("francia.pdf") %>%
-#   mutate(paese = forcats::as_factor("francia"))
-# 
-# 
-# germania <- drop_read_pdf("germania.pdf") %>%
-#   mutate(paese = forcats::as_factor("germania")) 
-#   
-#   
-# both_pnr <- bind_rows(francia, germania)
 
 
 ## stopwords per country 
 ## 
 arreter_mots <- get_stopwords("fr")
 parole_inutili <- get_stopwords("it")
+palabras_inutil <- get_stopwords("es")
 
 
 country_bigram <- reactive({
@@ -169,7 +145,10 @@ bigrams_filtered <- reactive({
     filter(!word1 %in% arreter_mots$word) %>%
     filter(!word2 %in% arreter_mots$word) %>% 
     filter(!word1 %in% parole_inutili$word) %>%
-    filter(!word2 %in% parole_inutili$word)
+    filter(!word2 %in% parole_inutili$word) %>% 
+    filter(!word1 %in% palabras_inutil$word) %>%
+    filter(!word2 %in% palabras_inutil$word)
+
 })
 
 # new bigram counts:
