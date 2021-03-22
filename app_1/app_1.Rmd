@@ -1,5 +1,5 @@
 ---
-title: "Explore Trigrams (Ger - Fra)"
+title: "Explore PNRR Trigrams"
 runtime: shiny
 output:
   html_document:
@@ -36,27 +36,29 @@ library(knitr, quietly = T, warn.conflicts = F)
 token <- readRDS("drop_token.rds")
 
 # mod from rdrop2
-drop_read_pdf =function (country_name, dest = tempdir(), dtoken = token,...){
-  
+drop_read_pdf <- function(country_name, dest = tempdir(), dtoken = token, ...) {
   output_dir <- "PNRR"
   file_info <- drop_dir(output_dir, dtoken = token)
-  
-  if(!(country_name %in% file_info$name)){
+
+  if (!(country_name %in% file_info$name)) {
     stop(glue("il nome della nazione {country_name} non è nella cartella Dropbox, hai per caso sbagliato a digitare il nome? (scrivilo in italiano ITA)"))
   }
-  
+
   file_path <- file_info %>%
     dplyr::filter(name == country_name) %>%
-    select(path_display) %>% 
+    select(path_display) %>%
     pull()
-  
-  localfile = glue("{dest}/{basename(file_path)}")
-  
-  drop_download(file_path, localfile, overwrite = TRUE, dtoken = token)
-  
-  pdftools::pdf_text(localfile, ...)
-}
 
+  localfile <- glue("{dest}/{basename(file_path)}")
+
+  drop_download(file_path, localfile, overwrite = TRUE, dtoken = token)
+
+  pdftools::pdf_text(localfile, ...) %>%
+    readr::read_lines() %>%
+    str_squish() %>%
+    as_tibble() %>%
+    rename(text = value)
+}
 
 ```
 
@@ -73,13 +75,16 @@ _latest build date_: `r format(Sys.Date(), "%d %B, %Y")`
 
 #### **Documentazione** `r emo::ji("document")`:
 
-- _Step 1_ -> Seleziona parola_1 e parola2. L'ordine non conta. 
-- _Step 2_ -> Specifica il _dizionario stopwords_ associare al paese (/alla lingua), cioè la Germania, l'Inglese (sì, il piano è scritto in inglese), per la Francia, il francese.
-- _Step 3_ -> Salvare plot tramite il bottone in basso. Molto in basso. `r emo::ji("low")` 
+- _Step 1_ -> Seleziona **parola_1** e **parola_2**. L'ordine non conta, assicurati che ogni parola sia nella lingua dell'input "Seleziona PNRR Paese".
+- _Step 2_ -> Seleziona il **numero massimo** di parole per **nodo**.
+- _Step 3_ -> Seleziona solo **N parole** per **nodo**.
+- _Step 4_ -> Specifica il _dizionario stopwords_ da associare al paese (/alla lingua). La Germania, l'Inglese (sì, il piano è scritto in inglese), per la Francia, il francese e così via.
+- _Step 5_ -> Salvare plot tramite il bottone in basso. Molto in basso. `r emo::ji("low")` 
 - Le analisi sono disponibili sulla base dei files .pdf dei [PNRR](https://ec.europa.eu/info/strategy/recovery-plan-europe_it) nell'account [Dropbpox](https://www.dropbox.com/login) con le credenziali:
   - `r emo::ji("user")`: niccolo.salvini27@gmail.com
   - `r emo::ji("password")`: ngw_db
-- I files disponibili nel ~ **DB** sono i seguenti (sono dinamici!):
+- Se vuoi fare l'upload di un file ricordati di metterlo nella **cartella "PNRR"**.
+- I files disponibili momentaneamente nel ~ **DB** sono i seguenti:
 
 ```{r paesedisp}
 
@@ -89,50 +94,42 @@ file_info %>%
   select(name, path_display,client_modified, size) %>% 
   knitr::kable()
 
+pnrrs_names = file_info %>%  
+  select(name) %>%  
+  pull
+
+
 ```
 
 #### Trigrams Dynamic APP `r emo::ji("engine")`
 
 ```{r app}
-# param set
-n_word <- 50
-n_top <- 150
+# set trigram
 n_gramming <- 3
 
 
-## local save decomposed body
-# francia = pdf_text("data/francia.pdf") %>%
-#   readr::read_lines() %>%  
-#   str_squish() %>% 
-#   as_tibble() %>% 
-#   mutate(paese= forcats::as_factor("francia")) %>% 
-#   rename(text = value)
-# 
-# germania = pdf_text("data/germania.pdf") %>%
-#   readr::read_lines() %>%
-#    str_squish() %>%  
-#   as_tibble() %>% 
-#   mutate(paese= forcats::as_factor("germania")) %>% 
-#   rename(text = value)
+inputPanel(
+  textInput("prima_parola", "Prima Parola:", "pensions"),
 
-francia = drop_read_pdf("francia.pdf") %>% 
-  readr::read_lines() %>%  
-  str_squish() %>% 
-  as_tibble() %>% 
-  mutate(paese= forcats::as_factor("francia")) %>% 
-  rename(text = value)
+  textInput("seconda_parola", "Seconda Parola:", "young"),
 
+  numericInput("n_word", "N° of words per node", 50, min = 1, max = 200),
 
-germania = drop_read_pdf("germania.pdf") %>% 
-  readr::read_lines() %>%  
-  str_squish() %>% 
-  as_tibble() %>% 
-  mutate(paese= forcats::as_factor("germania")) %>% 
+  numericInput("n_top", "N° of top words per node", 150, min = 1, max = 200),
 
-  rename(text = value)
+  selectInput("country",
+    label = "Seleziona PNRR Paese", choices = pnrrs_names,
+    selected = pnrrs_names[2]
+  ),
 
-
-doppio_pdf <- bind_rows(francia, germania)
+  radioButtons(
+    "stopw", "Stopwords: ",
+    c(
+      "Inglesi (doc Tedesco)" = "en",
+      "Francesi" = "fr"
+    )
+  )
+)
 
 ## utils
 ##
@@ -191,36 +188,17 @@ str_nth_word <- function(x, n, sep = " ") {
 }
 
 
-
-country <- c("francia", "germania")
-
-inputPanel(
-  textInput("prima_parola", "Prima Parola:", "pensions"),
-
-  textInput("seconda_parola", "Seconda Parola:", "young"),
-
-  
-  selectInput("country", label = "Seleziona Paese", choices = country,
-              selected = country[2]), 
-  
-  radioButtons("stopw", "Stopwords: ",
-               c("Inglesi (doc Tedesco)" = "en",
-                 "Francesi" = "fr"))
-  
-
-  # downloadButton('downloadPlot', 'Download Plot')
-)
-
-
 start_words <- reactive({
   c(input$prima_parola, input$seconda_parola)
 })
 
+
+
 trigrammas <- reactive({
-  doppio_pdf %>%
-    dplyr::filter(paese == input$country) %>%
+  drop_read_pdf(input$country) %>%
     unnest_tokens(trigram, text, token = "ngrams", n = n_gramming)
 })
+
 
 ## top 150 trigrams using count and some regex magi
 pattern <- reactive({
@@ -231,7 +209,7 @@ top_words <- reactive({
   trigrammas() %>%
     dplyr::filter(str_detect(trigram, pattern())) %>%
     count(trigram, sort = TRUE) %>%
-    slice(seq_len(n_top)) %>%
+    slice(seq_len(input$n_top)) %>%
     pull(trigram)
 })
 
@@ -247,10 +225,10 @@ nodes <- reactive({
     ~ trigrams() %>%
       mutate(word = str_nth_word(trigram, .x)) %>%
       count(word, sort = TRUE) %>%
-      slice(seq_len(n_word)) %>%
+      slice(seq_len(input$n_word)) %>%
       mutate(
         y = seq(
-          from = n_word + 1, to = 0,
+          from = input$n_word + 1, to = 0,
           length.out = n() + 2
         )[seq_len(n()) + 1],
         x = .x
@@ -400,13 +378,15 @@ renderPlot({
 
 downloadHandler(
   filename = function() {
-    glue::glue("{input$prima_parola}_{input$seconda_parola}_{input$country}.pdf")
+    glue::glue("{input$prima_parola}_{input$seconda_parola}_{input$country}")
   },
   content = function(file) {
     ggsave(file,
       plot = ggplot2::last_plot(),
       device = "pdf",
-      dpi = "retina"
+      dpi = "retina",
+      width = 8,
+      height = 4
     )
   }
 )
