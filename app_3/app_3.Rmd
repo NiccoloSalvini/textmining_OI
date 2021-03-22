@@ -54,7 +54,11 @@ drop_read_pdf =function (country_name, dest = tempdir(), dtoken = token, ...){
   
   drop_download(file_path, localfile, overwrite = TRUE, dtoken = token)
   
-  pdftools::pdf_text(localfile, ...)
+  pdftools::pdf_text(localfile, ...) %>% 
+    readr::read_lines() %>%
+    str_squish() %>%
+    as_tibble() %>%
+    rename(text = value)
 }
 
 ## .. maybe drake task
@@ -100,64 +104,72 @@ file_info %>%
   select(name, path_display,client_modified, size) %>% 
   knitr::kable()
 
+pnrrs_names = file_info %>%  
+  select(name) %>%  
+  pull
+
+
 ```
 
 #### Dynamic Bigrams Network APP `r emo::ji("engine")`
 
 ```{r bigramsnet}
 
-
-francia <- drop_read_pdf("francia.pdf") %>%
-  readr::read_lines() %>%
-  str_squish() %>%
-  as_tibble() %>%
-  mutate(paese = forcats::as_factor("francia")) %>%
-  rename(text = value)
-
-
-germania <- drop_read_pdf("germania.pdf") %>%
-  readr::read_lines() %>%
-  str_squish() %>%
-  as_tibble() %>%
-  mutate(paese = forcats::as_factor("germania")) %>%
-  rename(text = value)
-
-both_pnr <- bind_rows(francia, germania)
-
-arreter_mots <- get_stopwords("fr")
-
-country <- c("francia", "germania")
+# set number n_gram
+bigram = 2
+set.seed(2021)
 
 
 inputPanel(
+  
   numericInput("filter", "Filtra il n° dei Bigrammi", 5, min = 1, max = 100),
 
   selectInput("country",
-    label = "Seleziona Paese", choices = country,
-    selected = country[2]
+    label = "Selezionam PNRR Paese", choices = pnrrs_names,
+    selected = pnrrs_names[2]
   )
 )
 
+# 
+# francia <- drop_read_pdf("francia.pdf") %>%
+#   mutate(paese = forcats::as_factor("francia"))
+# 
+# 
+# germania <- drop_read_pdf("germania.pdf") %>%
+#   mutate(paese = forcats::as_factor("germania")) 
+#   
+#   
+# both_pnr <- bind_rows(francia, germania)
 
 
-ger_bigram <- reactive({
-  both_pnr %>%
-    dplyr::filter(paese == input$country) %>%
-    unnest_tokens(bigram, text, token = "ngrams", n = 2)
+## stopwords per country 
+## 
+arreter_mots <- get_stopwords("fr")
+parole_inutili <- get_stopwords("it")
+
+
+country_bigram <- reactive({
+
+  drop_read_pdf(input$country) %>%
+    unnest_tokens(bigram, text, token = "ngrams", n = bigram)
 })
 
 
-bigrams_separated_ger <- reactive({
-  ger_bigram() %>%
+bigrams_separated <- reactive({
+  country_bigram() %>%
     separate(bigram, c("word1", "word2"), sep = " ")
 })
 
+
+
 bigrams_filtered <- reactive({
-  bigrams_separated_ger() %>%
+  bigrams_separated() %>%
     filter(!word1 %in% stop_words$word) %>%
     filter(!word2 %in% stop_words$word) %>%
     filter(!word1 %in% arreter_mots$word) %>%
-    filter(!word2 %in% arreter_mots$word)
+    filter(!word2 %in% arreter_mots$word) %>% 
+    filter(!word1 %in% parole_inutili$word) %>%
+    filter(!word2 %in% parole_inutili$word)
 })
 
 # new bigram counts:
@@ -168,13 +180,12 @@ bigram_counts <- reactive({
 
 bigrams_united <- reactive({
   bigrams_filtered() %>%
-    select(-paese) %>%
     unite(bigram, sep = " ") %>%
     count(bigram, sort = TRUE)
 })
 
 
-set.seed(2021)
+## here setting seed required
 
 bigram_graph <- reactive({
   bigram_counts() %>%
