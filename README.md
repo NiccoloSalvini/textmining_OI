@@ -7,7 +7,7 @@
 
 *author*: **[Nicolò Foppiani](https://github.com/nfoppiani)** <br>
 *author*: **[Niccolò Salvini](https://niccolosalvini.netlify.app/)**
-<br> *last build date*: 20 marzo, 2021
+<br> *last build date*: 23 marzo, 2021
 
 <br> <br>
 
@@ -84,10 +84,11 @@ direttamente dall’editor, o in alternativa
 -   [x] build minimal topic modelling app (failed)
 -   [x] build minimal network eploration app
 -   [x] style the CSS for mobile usage and for more confortable usage
--   [ ] deal with the BERT expert
+-   [x] deal with the BERT expert
 -   [x] connect to db (Dropbox)
 -   [ ] test performance with
     [Profvis](https://rstudio.github.io/profvis/)
+-   [ ] add *app\_2* read\_db abstraction since it needs supervision.
 
 ## Code of Conduct 📰
 

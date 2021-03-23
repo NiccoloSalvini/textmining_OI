@@ -102,9 +102,10 @@ Apri il file di progetto nella cartella clonata `textmining_OI.Rproj`, successiv
 - [x] build minimal topic modelling app (failed)
 - [x] build minimal network eploration app
 - [x] style the CSS for mobile usage and for more confortable usage
-- [ ] deal with the BERT expert
+- [x] deal with the BERT expert
 - [x] connect to db (Dropbox)
 - [ ] test performance with [Profvis](https://rstudio.github.io/profvis/)
+- [ ] add _app_2_ read_db abstraction since it needs supervision.
 
 ## Code of Conduct `r emo::ji("paper")`
 

@@ -56,6 +56,13 @@ drop_read_pdf <- function(country_name, dest = tempdir(), dtoken = token, ...) {
 }
 
 
+from_pdf_to_tibble <- function(data) {
+  data %>%
+    readr::read_lines() %>%
+    str_squish() %>%
+    as_tibble() %>%
+    rename(text = value)
+}
 
 ```
 
@@ -97,113 +104,83 @@ file_info %>%
 ger_full <- drop_read_pdf("germania.pdf")
 fra_full <- drop_read_pdf("francia.pdf")
 
+
+
 ger_sec_1 <- ger_full[7:9] %>%
-  readr::read_lines() %>%
-  str_squish() %>%
-  as_tibble() %>%
+  from_pdf_to_tibble() %>%
   mutate(
     paese = forcats::as_factor("germania"),
     sect = forcats::as_factor("Summary")
-  ) %>%
-  rename(text = value)
+  )
 
 ger_sec_2 <- ger_full[11] %>%
-  readr::read_lines() %>%
-  str_squish() %>%
-  as_tibble() %>%
+  from_pdf_to_tibble() %>%
   mutate(
     paese = forcats::as_factor("germania"),
     sect = forcats::as_factor("Financial framework")
-  ) %>%
-  rename(text = value)
+  )
 
 ger_sec_3 <- ger_full[13:15] %>%
-  readr::read_lines() %>%
-  str_squish() %>%
-  as_tibble() %>%
+  from_pdf_to_tibble() %>%
   mutate(
     paese = forcats::as_factor("germania"),
     sect = forcats::as_factor("Linking the plan with the European Semester")
-  ) %>%
-  rename(text = value)
+  )
 
 ger_sec_4 <- ger_full[17:19] %>%
-  readr::read_lines() %>%
-  str_squish() %>%
-  as_tibble() %>%
+  from_pdf_to_tibble() %>%
   mutate(
     paese = forcats::as_factor("germania"),
     sect = forcats::as_factor("Description of investment measures and reforms")
-  ) %>%
-  rename(text = value)
+  )
 
 ger_sec_5 <- ger_full[21:41] %>%
-  readr::read_lines() %>%
-  str_squish() %>%
-  as_tibble() %>%
+  from_pdf_to_tibble() %>%
   mutate(
     paese = forcats::as_factor("germania"),
     sect = forcats::as_factor("Details of focus areas for measures and components")
-  ) %>%
-  rename(text = value)
+  )
 
 ger_sec_6 <- ger_full[43] %>%
-  readr::read_lines() %>%
-  str_squish() %>%
-  as_tibble() %>%
+  from_pdf_to_tibble() %>%
   mutate(
     paese = forcats::as_factor("germania"),
     sect = forcats::as_factor("Institutional governance of the German Recovery and Resilience Plan")
-  ) %>%
-  rename(text = value)
-
-
-
+  )
 
 ##### labelling manuale per francia
 ##### qui per macro-aree
 
 
 fr_sec_1 <- fra_full[3:4] %>%
-  readr::read_lines() %>%
-  str_squish() %>%
-  as_tibble() %>%
+  from_pdf_to_tibble() %>%
   mutate(
     paese = forcats::as_factor("francia"),
     sect = forcats::as_factor("introduction")
-  ) %>%
-  rename(text = value)
+  )
 
 
 fr_sec_2 <- fra_full[9:116] %>%
-  readr::read_lines() %>%
-  str_squish() %>%
-  as_tibble() %>%
+  from_pdf_to_tibble() %>%
   mutate(
     paese = forcats::as_factor("francia"),
     sect = forcats::as_factor("Écologie")
-  ) %>%
-  rename(text = value)
+  )
 
 fr_sec_3 <- fra_full[117:162] %>%
-  readr::read_lines() %>%
-  str_squish() %>%
-  as_tibble() %>%
+  from_pdf_to_tibble() %>%
   mutate(
     paese = forcats::as_factor("francia"),
     sect = forcats::as_factor("Compétitivité")
-  ) %>%
-  rename(text = value)
+  )
 
 fr_sec_4 <- fra_full[163:289] %>%
-  readr::read_lines() %>%
-  str_squish() %>%
-  as_tibble() %>%
+  from_pdf_to_tibble() %>%
   mutate(
     paese = forcats::as_factor("francia"),
     sect = forcats::as_factor("Cohésion")
-  ) %>% ## qui ci sono i giovani come Jeunes
-  rename(text = value)
+  ) ## qui ci sono i giovani come Jeunes
+
 
 ger_doc <- bind_rows(ger_sec_1, ger_sec_2, ger_sec_3, ger_sec_4, ger_sec_5, ger_sec_6)
 fr_doc <- bind_rows(fr_sec_1, fr_sec_2, fr_sec_3, fr_sec_4)
