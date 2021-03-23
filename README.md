@@ -88,8 +88,9 @@ direttamente dall’editor, o in alternativa
 -   [x] connect to db (Dropbox)
 -   [ ] test performance with
     [Profvis](https://rstudio.github.io/profvis/)
+-   [ ] add *app\_2* read\_db abstraction since it needs supervision.
 
-## Code of Conduct 🗞
+## Code of Conduct 📰
 
 Contributor Code of Conduct As contributors and maintainers of this
 project, we pledge to respect all people who contribute through

@@ -105,6 +105,7 @@ Apri il file di progetto nella cartella clonata `textmining_OI.Rproj`, successiv
 - [x] deal with the BERT expert
 - [x] connect to db (Dropbox)
 - [ ] test performance with [Profvis](https://rstudio.github.io/profvis/)
+- [ ] add _app_2_ read_db abstraction since it needs supervision.
 
 ## Code of Conduct `r emo::ji("paper")`
 
